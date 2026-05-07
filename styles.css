@@ -14,27 +14,13 @@
   initial-value: 0px;
 }
 
-/* Local custom font.  Drop the downloaded file into assets/fonts/ at any
-   one of the paths below — the browser will use whichever it finds. */
-@font-face {
-  font-family: "Style Mono";
-  src:
-    url("assets/fonts/StyleMono.woff2") format("woff2"),
-    url("assets/fonts/StyleMono.woff") format("woff"),
-    url("assets/fonts/StyleMono.otf") format("opentype"),
-    url("assets/fonts/StyleMono.ttf") format("truetype");
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
-
 :root {
   --canvas: #fafaf9;
   --ink: #141413;
   --ink-soft: rgba(20, 20, 19, 0.42);
   --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --display: "Instrument Serif", "Times New Roman", Georgia, serif;
-  --mono: "Style Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
 *,
@@ -751,23 +737,11 @@ body {
   --manifesto-ink: #00b74f;
 }
 
-/* Wrapper for inline rail controls — keeps the buttons grouped together
-   in the centre of the rail. */
-.has-manifesto .manifesto__rail-controls {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-/* Rail control buttons (mode toggle, robot toggle, etc.) — must be
-   discoverable by colorblind users, so they rely on LUMINANCE contrast
-   (black/white) rather than just hue. Small pill that inverts against
-   its background: black-on-white in art mode, white-on-black in
-   high-contrast mode. */
-.has-manifesto .manifesto__mode-toggle,
-.has-manifesto .manifesto__robot-toggle {
+/* Mode toggle button — must be discoverable by colorblind users, so it
+   relies on LUMINANCE contrast (black/white) rather than just hue.
+   Small pill that inverts against its background: black-on-white in
+   art mode, white-on-black in high-contrast mode. */
+.has-manifesto .manifesto__mode-toggle {
   appearance: none;
   border: 1.5px solid #000;
   padding: 0.4rem 0.85rem;
@@ -787,17 +761,14 @@ body {
     transform 0.18s ease;
 }
 
-.has-manifesto.is-contrast .manifesto__mode-toggle,
-.has-manifesto.is-contrast .manifesto__robot-toggle {
+.has-manifesto.is-contrast .manifesto__mode-toggle {
   background: #000000;
   color: #ffffff;
   border-color: #000000;
 }
 
 .has-manifesto .manifesto__mode-toggle:hover,
-.has-manifesto .manifesto__mode-toggle:focus-visible,
-.has-manifesto .manifesto__robot-toggle:hover,
-.has-manifesto .manifesto__robot-toggle:focus-visible {
+.has-manifesto .manifesto__mode-toggle:focus-visible {
   outline: none;
   transform: translateY(-1px);
 }
@@ -809,11 +780,15 @@ body {
   display: none;
 }
 
-/* Flex column layout: the manifesto container is the full viewport
-   height, the spread fills all the space between the top padding and
-   the (fixed) rail at the bottom, and the headline scales to fill
-   that space. The rail and the robot are both position: fixed so they
-   don't participate in this flow. */
+/* Flex column layout: the manifesto container fills at least one
+   viewport. The spread holds the headline and is sized to fill
+   100vh minus the rail's height, so the rail sits flush at the
+   bottom of the first viewport on initial load. As the user scrolls
+   down, the rail scrolls UP with the page and then sticks to the
+   top of the viewport (see .manifesto__rail below), and the venn
+   section scrolls beneath the stuck rail. The robot is absolutely
+   positioned within .manifesto__spread, so it scrolls with the
+   headline and disappears once the user scrolls past the spread. */
 .has-manifesto .manifesto {
   display: flex;
   flex-direction: column;
@@ -821,19 +796,31 @@ body {
   padding-top: clamp(1rem, 3vh, 2.5rem);
   padding-left: clamp(1.5rem, 4vw, 4rem);
   padding-right: clamp(1.5rem, 4vw, 4rem);
-  /* Rail is fixed-positioned, so we just need enough bottom padding so
-     the headline doesn't sit underneath the rail. */
-  padding-bottom: clamp(6rem, 12vh, 10rem);
   position: relative;
   box-sizing: border-box;
+  /* --rail-h is measured & set by manifesto.js so the spread can size
+     itself to (100vh - rail height) and the rail lands flush at the
+     bottom of the first viewport. Falls back to a sensible static
+     guess if JS is disabled. */
+  --rail-h: 4.5rem;
 }
 
 .has-manifesto .manifesto__spread {
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  /* Fill the first viewport minus the rail height (and container's top
+     padding), so the rail naturally sits flush at the bottom of the
+     visible viewport on initial load. flex-shrink: 0 so the spread
+     doesn't compress when the venn section pushes total content past
+     100vh. */
+  flex: 0 0 calc(100vh - var(--rail-h) - clamp(1rem, 3vh, 2.5rem));
   min-height: 0;
+  /* Containing block for the absolutely-positioned robot so the robot
+     anchors to the spread's bottom edge and scrolls AWAY with the
+     headline (rather than following the viewport into the venn
+     section below). */
+  position: relative;
 }
 
 /* (Spread layout rules consolidated above — block flow, with margin
@@ -845,9 +832,13 @@ body {
    Mix-blend-mode makes the GIF's white background "punch through" the
    pink page so it reads as if it were transparent. */
 .has-manifesto .manifesto__robot {
-  position: fixed;
+  /* Anchored to the spread's bottom-right (NOT the viewport). This
+     way the robot scrolls with the headline section and disappears
+     once the user scrolls past the spread into the venn area —
+     rather than following them down the page. */
+  position: absolute;
   right: clamp(0.5rem, 2vw, 2rem);
-  bottom: calc(1.5rem + clamp(2rem, 4vh, 3.25rem));
+  bottom: 0;
   width: clamp(14rem, 30vw, 32rem);
   height: auto;
   display: block;
@@ -855,15 +846,6 @@ body {
   z-index: 5;
   mix-blend-mode: multiply;
   opacity: 0.55;
-  transition: opacity 0.25s ease;
-}
-
-/* Toggled by the rail "Hide robot" button. Visibility hidden (rather
-   than display: none) so the JS that aligns the robot's bottom edge to
-   the rail still has a measurable element to read. */
-.has-manifesto.is-robot-hidden .manifesto__robot {
-  opacity: 0;
-  visibility: hidden;
 }
 
 /* The headline sentence. Tight, chunky, condensed-feeling Inter Black —
@@ -1018,10 +1000,10 @@ body {
      looking blocky rather than smooth. */
   image-rendering: pixelated;
   transition:
-    --push-x 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.4),
-    --push-y 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.4),
-    filter 90ms steps(3, end),
-    opacity 90ms steps(2, end);
+    --push-x 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.2),
+    --push-y 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.2),
+    filter 40ms linear,
+    opacity 40ms linear;
 }
 
 /* Each chip uses a slightly different scale + animation timing so the
@@ -1142,16 +1124,29 @@ body {
 /* Bottom rail: tagline on the left, meta on the right, separated like a
    masthead/colophon. */
 .has-manifesto .manifesto__rail {
-  position: fixed;
-  left: clamp(1.5rem, 4vw, 4rem);
-  right: clamp(1.5rem, 4vw, 4rem);
-  bottom: 1.5rem;
+  /* Sits in document flow at the bottom of the first viewport thanks
+     to .manifesto__spread's flex-basis. As the user scrolls down, the
+     rail moves up with the page and then sticks to the top once it
+     reaches the top edge — staying anchored while the venn section
+     scrolls beneath it. */
+  position: sticky;
+  top: 0;
+  z-index: 50;
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 1rem;
-  padding-top: clamp(1.5rem, 3vh, 2.5rem);
+  /* Counter-bleed: extend horizontally to the viewport edges by
+     using negative margins equal to the parent's horizontal padding,
+     so the sticky bar reads as a full-width band at the top. The
+     inner padding then re-creates the original inset for the text. */
+  margin: 0 calc(-1 * clamp(1.5rem, 4vw, 4rem));
+  padding: clamp(1.25rem, 2.5vh, 2rem) clamp(1.5rem, 4vw, 4rem)
+    clamp(1.1rem, 2.2vh, 1.6rem);
   border-top: 1px solid currentColor;
+  /* Opaque so the venn diagram scrolling beneath doesn't bleed
+     through once the rail is stuck. */
+  background: var(--manifesto-bg);
   font-family: "Inter", system-ui, sans-serif;
   font-weight: 700;
   font-size: clamp(0.7rem, 0.95vw, 0.95rem);
@@ -1175,7 +1170,6 @@ body {
   .has-manifesto .manifesto__robot {
     width: clamp(10rem, 38vw, 16rem);
     right: clamp(0.5rem, 3vw, 1.5rem);
-    bottom: clamp(3rem, 8vh, 5rem);
   }
 
   .has-manifesto .manifesto__copy {
@@ -1192,5 +1186,173 @@ body {
     text-align: left;
     letter-spacing: 0.1em;
   }
+}
+
+/* ----------------------------------------------------------------------
+   Manifesto Venn diagram
+   Sits below the manifesto rail, revealed by scroll. Two big black
+   outlined circles overlapping ~30% with "fear" / "utopia" titles
+   centered above each non-overlapping bulb.
+   ---------------------------------------------------------------------- */
+.has-manifesto .manifesto-venn {
+  position: relative;
+  /* Counter-bleed: extend horizontally to the viewport edges by
+     using negative margins equal to the parent's horizontal padding
+     (matches the rail's bleed treatment so the section reads as a
+     full-width band beneath the sticky rail). */
+  margin: 0 calc(-1 * clamp(1.5rem, 4vw, 4rem));
+  /* Lock the section at exactly 90vh so the fear / utopia diagram
+     occupies one viewport-height of vertical space — no more. The
+     venn box itself is sized below to fit comfortably inside this
+     with a bit of breathing room from flex centering. */
+  height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 clamp(1rem, 4vw, 3rem);
+  background: var(--manifesto-bg);
+  overflow: hidden;
+}
+
+.has-manifesto .venn {
+  /* Diameter is capped by THREE constraints so the venn always fits:
+     - 56vw (so it doesn't blow out wide on landscape monitors)
+     - 75vh (so label + gap + diameter still fit inside the 90vh
+       section bound on .manifesto-venn, leaving breathing room)
+     - 820px absolute max for huge displays
+     ...and a 260px floor so it stays legible on small viewports. */
+  --venn-d: clamp(260px, min(56vw, 75vh), 820px);
+  --venn-overlap: 0.32;
+  --venn-label-fs: clamp(2rem, 5vw, 4.5rem);
+  --venn-label-h: var(--venn-label-fs);
+  --venn-gap: clamp(0.6rem, 1.5vh, 1.5rem);
+  /* Stroke + label color: green in art mode, black in high-contrast.
+     Overridden below for .has-manifesto.is-contrast. */
+  --venn-ink: #00b74f;
+  position: relative;
+  width: calc(var(--venn-d) * (2 - var(--venn-overlap)));
+  height: calc(var(--venn-label-h) + var(--venn-gap) + var(--venn-d));
+  max-width: 100%;
+}
+
+.has-manifesto.is-contrast .venn {
+  --venn-ink: #000;
+}
+
+.has-manifesto .venn__circle {
+  position: absolute;
+  /* Drop below the label row so titles sit ABOVE the circles. */
+  top: calc(var(--venn-label-h) + var(--venn-gap));
+  width: var(--venn-d);
+  height: var(--venn-d);
+  border-radius: 50%;
+  border: clamp(4px, 0.55vw, 8px) solid var(--venn-ink);
+  /* Don't intercept pointer events — let them fall through to the
+     ghost <img> elements underneath (which DO want pointer-events:
+     auto so they can be dragged). The circles paint AFTER the
+     ghost wrapper in DOM, so without this they'd swallow every
+     click/touch even though they're just outlines. */
+  pointer-events: none;
+}
+
+.has-manifesto .venn__circle--left {
+  left: 0;
+}
+
+.has-manifesto .venn__circle--right {
+  right: 0;
+}
+
+/* Labels sit in the top "lane" of the venn box, each centered
+   horizontally above its corresponding circle. Match the manifesto
+   headline's display treatment: Inter Black uppercase, tight tracking. */
+.has-manifesto .venn__label {
+  position: absolute;
+  top: 0;
+  width: var(--venn-d);
+  height: var(--venn-label-h);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 900;
+  font-size: var(--venn-label-fs);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: var(--venn-ink);
+  white-space: nowrap;
+  margin: 0;
+  /* Don't intercept clicks meant for the ghost clips drifting beneath. */
+  pointer-events: none;
+}
+
+.has-manifesto .venn__label--left {
+  left: 0;
+}
+
+.has-manifesto .venn__label--right {
+  right: 0;
+}
+
+@media (max-width: 640px) {
+  .has-manifesto .venn {
+    --venn-d: 58vw;
+    --venn-overlap: 0.4;
+    --venn-label-fs: clamp(1.6rem, 7vw, 3rem);
+  }
+}
+
+/* Ghost clips drifting between fear and utopia.
+   Each image is positioned absolutely inside the venn box and rendered
+   at full opacity. Motion is fully JS-driven — see the ghost physics
+   loop in manifesto.js. Each ghost has its own velocity vector (vx,
+   vy) and bounces off the venn box edges like a ping-pong ball;
+   bounces add random kicks to the perpendicular component so
+   trajectories never repeat, and a periodic nudge rotates the velocity
+   vector for the "switches direction randomly" feel.
+   The clips are also touch/mouse-draggable: pointer-events: auto and
+   touch-action: none on each <img> let the user grab a clip and slide
+   it to a new spot. While grabbed the physics integration for that
+   ghost is paused; on release it resumes drifting from its new home
+   in a fresh random direction. */
+.has-manifesto .venn__ghosts {
+  position: absolute;
+  inset: 0;
+  /* The wrapper itself is non-interactive — only the actual image
+     children below override this with pointer-events: auto so empty
+     space between ghosts doesn't catch clicks. */
+  pointer-events: none;
+  /* Sit BEHIND the circle borders and labels so the ghosts feel like
+     they're drifting through the diagram. */
+  z-index: 0;
+}
+
+.has-manifesto .venn__ghost {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--ghost-w, 12rem);
+  height: calc(var(--ghost-w, 12rem) * var(--ghost-aspect, 0.85));
+  object-fit: cover;
+  opacity: 1;
+
+  /* Pointer interaction. */
+  pointer-events: auto;
+  touch-action: none; /* So touch-drag doesn't trigger page scroll. */
+  cursor: grab;
+  user-select: none;
+  -webkit-user-drag: none;
+
+  /* JS sets transform: translate3d(x, y, 0) rotate(...) every frame.
+     will-change tells the browser to promote to its own layer. */
+  will-change: transform;
+}
+
+.has-manifesto .venn__ghost.is-grabbed {
+  cursor: grabbing;
+  /* Lift the grabbed clip above its peers so it visually leads while
+     dragging. */
+  z-index: 1;
 }
 

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="GLITCH — map version. Preview of the topographic-map-background layout."
+    />
+    <title>GLITCH — Map preview</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /*
+        Map-version preview.
+        Reconstructed from the chat history of May 6, 2026, ~3pm PT:
+          - SF topographic map full-bleed background, fixed-attached
+          - 70% white overlay so the map sits at ~30% visibility
+          - GLITCH pixel logo pinned top center
+          - "A travelling fashion show in San Francisco" headline beneath
+          - Looping robot movie anchored at the bottom-center of the viewport
+
+        Styles are scoped to .has-map and live inline in this file so they
+        don't conflict with the main site styles.
+      */
+
+      :root {
+        --canvas: #ffffff;
+        --ink: #141413;
+        --display: "Instrument Serif", "Times New Roman", Georgia, serif;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+      }
+
+      .has-map {
+        --canvas: #ffffff;
+        background-color: var(--canvas);
+        /* Stacked layers: white wash on top fades the map to ~30% visible. */
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)),
+          url("assets/sf-map-pink.png");
+        background-repeat: no-repeat, no-repeat;
+        background-position: center top, center top;
+        background-size: cover, cover;
+        background-attachment: fixed, fixed;
+        position: relative;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: "Inter", system-ui, -apple-system, sans-serif;
+      }
+
+      /* Pixel-art logo pinned top center. Disable smoothing so the upscaled
+         bitmap stays crisp. */
+      .has-map .glitch-logo {
+        position: fixed;
+        top: clamp(1rem, 2.5vh, 2rem);
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 40;
+        display: block;
+        line-height: 0;
+      }
+
+      .has-map .glitch-logo img {
+        display: block;
+        height: clamp(48px, 10vh, 110px);
+        width: auto;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        background: transparent;
+      }
+
+      /* Headline sits centered just under the logo. */
+      .has-map .map-hub {
+        position: relative;
+        z-index: 30;
+        text-align: center;
+        padding-top: clamp(7rem, 16vh, 11rem);
+        padding-inline: clamp(1rem, 4vw, 4rem);
+      }
+
+      .has-map .map-headline {
+        margin: 0 auto;
+        font-family: var(--display);
+        font-style: italic;
+        font-weight: 400;
+        font-size: clamp(2rem, 5vw, 4.5rem);
+        line-height: 1.05;
+        letter-spacing: -0.01em;
+        color: var(--ink);
+        max-width: 18ch;
+      }
+
+      /* Looping robot movie locked to the bottom-center of the viewport. */
+      .has-map .robot-movie {
+        position: fixed;
+        left: 50%;
+        bottom: 0;
+        transform: translateX(-50%);
+        width: auto;
+        height: 75vh;
+        max-width: 100%;
+        object-fit: contain;
+        object-position: bottom center;
+        z-index: 15;
+        pointer-events: none;
+        background: transparent;
+      }
+
+      @media (max-aspect-ratio: 1/1) {
+        .has-map .robot-movie {
+          width: 100%;
+          height: auto;
+          max-height: 75vh;
+        }
+      }
+
+      /* Tiny "back to current site" link in the corner so this preview
+         page doesn't feel like a dead end. */
+      .has-map .back-link {
+        position: fixed;
+        top: clamp(1rem, 2.5vh, 2rem);
+        right: clamp(1rem, 3vw, 2rem);
+        z-index: 40;
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        font-size: clamp(0.7rem, 0.9vw, 0.85rem);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--ink);
+        text-decoration: none;
+        padding: 0.4rem 0.85rem;
+        border: 1px solid var(--ink);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(4px);
+        transition:
+          background 0.18s ease,
+          color 0.18s ease;
+      }
+
+      .has-map .back-link:hover,
+      .has-map .back-link:focus-visible {
+        background: var(--ink);
+        color: var(--canvas);
+        outline: none;
+      }
+
+      .skip {
+        position: absolute;
+        left: -9999px;
+      }
+      .skip:focus {
+        left: 1rem;
+        top: 1rem;
+        z-index: 100;
+        padding: 0.5rem 1rem;
+        background: var(--ink);
+        color: var(--canvas);
+      }
+    </style>
+  </head>
+  <body class="has-map">
+    <a class="skip" href="#land">Skip to content</a>
+
+    <a class="glitch-logo" href="index.html" aria-label="GLITCH — home">
+      <img src="assets/glitch_logo.png" alt="GLITCH" decoding="async" />
+    </a>
+
+    <a class="back-link" href="index.html">← back</a>
+
+    <video
+      class="robot-movie"
+      src="assets/hq.mp4"
+      autoplay
+      loop
+      muted
+      playsinline
+      preload="auto"
+      aria-hidden="true"
+    ></video>
+
+    <main id="land">
+      <section class="map-hub">
+        <h1 class="map-headline">a travelling fashion show in San Francisco</h1>
+      </section>
+    </main>
+  </body>
+</html>

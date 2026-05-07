@@ -72,35 +72,20 @@ const fitManifestoCopy = (() => {
   });
 })();
 
-// Robot toggle: hide / show the floating robot. The label flips to
-// describe what clicking will do next, mirroring the mode toggle's
-// pattern for consistency.
-(() => {
-  const toggle = document.querySelector(".manifesto__robot-toggle");
-  if (!toggle) return;
-  const body = document.body;
-  toggle.addEventListener("click", () => {
-    const hiding = !body.classList.contains("is-robot-hidden");
-    body.classList.toggle("is-robot-hidden", hiding);
-    toggle.textContent = hiding ? "Show robot" : "Hide robot";
-    toggle.setAttribute("aria-pressed", hiding ? "true" : "false");
-  });
-})();
-
-// Pin the robot's bottom edge exactly to the top edge of the bottom
-// rail. Both elements are position: fixed so the math is in viewport
-// coordinates: robot's `bottom` (offset from viewport bottom) equals the
-// distance from rail.top up to viewport.bottom.
+// Measure the rail's height once layout settles and expose it as
+// --rail-h on .manifesto so the spread can size itself to
+// (100vh - --rail-h), pushing the rail flush to the bottom of the
+// first viewport on initial load. The robot's vertical anchor is
+// handled purely in CSS (position: absolute; bottom: 0 within the
+// spread), so no JS-side robot positioning is needed.
 (() => {
   const align = () => {
-    const robot = document.querySelector(".manifesto__robot");
+    const manifesto = document.querySelector(".manifesto");
     const rail = document.querySelector(".manifesto__rail");
-    if (!robot || !rail) return;
-    const railTop = rail.getBoundingClientRect().top;
-    const viewportH = window.innerHeight;
-    const offset = viewportH - railTop;
-    if (offset > 0) {
-      robot.style.bottom = `${offset}px`;
+    if (!rail || !manifesto) return;
+    const railHeight = rail.getBoundingClientRect().height;
+    if (railHeight > 0) {
+      manifesto.style.setProperty("--rail-h", `${railHeight}px`);
     }
   };
 
@@ -108,10 +93,259 @@ const fitManifestoCopy = (() => {
   window.addEventListener("load", align);
   window.addEventListener("resize", align);
   // Run once more after fonts settle so any line-height shifts in the
-  // rail don't throw off the offset.
+  // rail don't throw off the height measurement.
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(align);
   }
+})();
+
+// Ghost clips drifting between "fear" and "utopia" — full 2D motion
+// + touch/mouse drag to relocate.
+//
+// Each ghost is a particle with position (x, y), velocity (vx, vy), and
+// rotation. On every rAF tick we integrate position by velocity, then:
+//   • If the particle hits a wall, reverse the perpendicular velocity
+//     component AND add a small random kick to the parallel component.
+//     This gives the ping-pong feel while preventing trajectories from
+//     becoming periodic / boring.
+//   • Periodically (every ~1.8–6.3s, per-ghost) rotate the velocity
+//     vector by a random small angle so the ghost can switch direction
+//     mid-flight, not just at walls.
+//   • Speed is clamped to a target band so bounce-jitter doesn't slowly
+//     accelerate or stall a ghost.
+// Rotation is a slow per-ghost sine wave (each with its own phase &
+// frequency) — bounded ~±2.8° so ghosts stay legible.
+//
+// Drag: each <img> has pointer-events: auto + touch-action: none. On
+// pointerdown we mark the ghost as `grabbed` and remember the cursor's
+// offset within the ghost. On pointermove we slide the ghost so that
+// offset stays under the cursor. On pointerup we release and reset
+// the velocity to a fresh random direction so the ghost drifts away
+// from its new spot. While `grabbed`, the physics tick skips the
+// integrate / bounce / nudge steps for that ghost.
+(() => {
+  const ghosts = Array.from(document.querySelectorAll(".venn__ghost"));
+  if (!ghosts.length) return;
+  const venn = document.querySelector(".venn");
+  if (!venn) return;
+
+  const reducedMQ = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  const SPEED_MIN = 50; // px/s — clamp lower bound so ghosts never stall
+  const SPEED_MAX = 130; // px/s — clamp upper bound so they never get too zippy
+
+  // Per-ghost mutable state.
+  const state = ghosts.map(() => ({
+    x: 0,
+    y: 0,
+    vx: 0,
+    vy: 0,
+    rotPhase: Math.random() * Math.PI * 2,
+    rotFreq: 0.25 + Math.random() * 0.55, // rad/s sway frequency
+    rotAmp: 1.2 + Math.random() * 1.6, // ±1.2°–±2.8° amplitude
+    nextNudge: 0,
+    grabbed: false,
+    grabDx: 0, // pointer offset within the ghost on grab (in venn coords)
+    grabDy: 0,
+  }));
+
+  function applyTransform(i, rotDeg) {
+    const s = state[i];
+    ghosts[i].style.transform = `translate3d(${s.x.toFixed(1)}px, ${s.y.toFixed(1)}px, 0) rotate(${(rotDeg || 0).toFixed(2)}deg)`;
+  }
+
+  function randomVelocity() {
+    const speed = SPEED_MIN + Math.random() * (SPEED_MAX - SPEED_MIN);
+    const angle = Math.random() * Math.PI * 2;
+    return { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed };
+  }
+
+  function seed() {
+    ghosts.forEach((ghost, i) => {
+      const sizeRem = 8 + Math.random() * 10; // 8–18rem
+      const aspect = 0.6 + Math.random() * 0.6; // 0.6–1.2
+      ghost.style.setProperty("--ghost-w", `${sizeRem.toFixed(2)}rem`);
+      ghost.style.setProperty("--ghost-aspect", aspect.toFixed(2));
+
+      const v = randomVelocity();
+      state[i].vx = v.vx;
+      state[i].vy = v.vy;
+      state[i].nextNudge =
+        performance.now() + 1800 + Math.random() * 4500;
+    });
+  }
+
+  function placeRandomly() {
+    const r = venn.getBoundingClientRect();
+    ghosts.forEach((ghost, i) => {
+      const w = ghost.offsetWidth;
+      const h = ghost.offsetHeight;
+      state[i].x = Math.random() * Math.max(0, r.width - w);
+      state[i].y = Math.random() * Math.max(0, r.height - h);
+      applyTransform(i, 0);
+    });
+  }
+
+  seed();
+  // Wait one frame so --ghost-w applies before we measure offsetWidth.
+  requestAnimationFrame(placeRandomly);
+
+  // ---- Drag ------------------------------------------------------------
+  // Use Pointer Events so mouse, touch, and pen are all handled by one
+  // path. Pointer capture keeps the move/up events flowing to the same
+  // element even if the cursor leaves the image while dragging.
+  ghosts.forEach((ghost, i) => {
+    const onDown = (e) => {
+      // Only handle the primary button / single touch.
+      if (e.button !== undefined && e.button !== 0) return;
+      const r = venn.getBoundingClientRect();
+      const px = e.clientX - r.left;
+      const py = e.clientY - r.top;
+      state[i].grabbed = true;
+      state[i].grabDx = px - state[i].x;
+      state[i].grabDy = py - state[i].y;
+      ghost.classList.add("is-grabbed");
+      try {
+        ghost.setPointerCapture(e.pointerId);
+      } catch {
+        /* setPointerCapture can throw if pointerId is gone — ignore. */
+      }
+      e.preventDefault();
+    };
+
+    const onMove = (e) => {
+      if (!state[i].grabbed) return;
+      const r = venn.getBoundingClientRect();
+      const px = e.clientX - r.left;
+      const py = e.clientY - r.top;
+      const w = ghost.offsetWidth;
+      const h = ghost.offsetHeight;
+      const maxX = Math.max(0, r.width - w);
+      const maxY = Math.max(0, r.height - h);
+      // Clamp so the dragged ghost stays inside the venn box.
+      state[i].x = Math.max(0, Math.min(maxX, px - state[i].grabDx));
+      state[i].y = Math.max(0, Math.min(maxY, py - state[i].grabDy));
+      // Apply immediately (don't wait for next physics tick) so the
+      // drag feels stuck to the finger / cursor.
+      applyTransform(i, 0);
+    };
+
+    const onUp = (e) => {
+      if (!state[i].grabbed) return;
+      state[i].grabbed = false;
+      ghost.classList.remove("is-grabbed");
+      // Re-randomize velocity so the ghost drifts away from its new
+      // home in a fresh direction (rather than continuing whatever
+      // pre-grab trajectory it had).
+      const v = randomVelocity();
+      state[i].vx = v.vx;
+      state[i].vy = v.vy;
+      try {
+        ghost.releasePointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+    };
+
+    ghost.addEventListener("pointerdown", onDown);
+    ghost.addEventListener("pointermove", onMove);
+    ghost.addEventListener("pointerup", onUp);
+    ghost.addEventListener("pointercancel", onUp);
+    ghost.addEventListener("lostpointercapture", onUp);
+    // Suppress the browser's native image drag-and-drop ghost so it
+    // doesn't fight our custom drag.
+    ghost.addEventListener("dragstart", (e) => e.preventDefault());
+  });
+
+  if (reducedMQ.matches) return;
+
+  // ---- Physics loop ---------------------------------------------------
+  let bounds = venn.getBoundingClientRect();
+  const onResize = () => {
+    bounds = venn.getBoundingClientRect();
+  };
+  window.addEventListener("resize", onResize);
+
+  let lastT = performance.now();
+  function tick(t) {
+    // Cap dt so a backgrounded tab returning doesn't teleport ghosts.
+    const dt = Math.min(64, t - lastT) / 1000;
+    lastT = t;
+
+    for (let i = 0; i < state.length; i++) {
+      const s = state[i];
+      const ghost = ghosts[i];
+
+      // Skip physics for grabbed ghosts — pointermove is driving the
+      // transform directly.
+      if (s.grabbed) continue;
+
+      const w = ghost.offsetWidth;
+      const h = ghost.offsetHeight;
+      const maxX = Math.max(0, bounds.width - w);
+      const maxY = Math.max(0, bounds.height - h);
+
+      // Integrate
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+
+      // Bounce: reverse the perpendicular component, kick the
+      // parallel one, so the post-bounce trajectory isn't a perfect
+      // mirror of the pre-bounce one — produces the random
+      // direction-switching feel.
+      if (s.x < 0) {
+        s.x = 0;
+        s.vx = Math.abs(s.vx) * (0.85 + Math.random() * 0.3);
+        s.vy += (Math.random() - 0.5) * 35;
+      } else if (s.x > maxX) {
+        s.x = maxX;
+        s.vx = -Math.abs(s.vx) * (0.85 + Math.random() * 0.3);
+        s.vy += (Math.random() - 0.5) * 35;
+      }
+
+      if (s.y < 0) {
+        s.y = 0;
+        s.vy = Math.abs(s.vy) * (0.85 + Math.random() * 0.3);
+        s.vx += (Math.random() - 0.5) * 35;
+      } else if (s.y > maxY) {
+        s.y = maxY;
+        s.vy = -Math.abs(s.vy) * (0.85 + Math.random() * 0.3);
+        s.vx += (Math.random() - 0.5) * 35;
+      }
+
+      // Clamp speed to the target band.
+      const sp = Math.hypot(s.vx, s.vy);
+      if (sp > SPEED_MAX) {
+        s.vx = (s.vx / sp) * SPEED_MAX;
+        s.vy = (s.vy / sp) * SPEED_MAX;
+      } else if (sp < SPEED_MIN && sp > 0) {
+        s.vx = (s.vx / sp) * SPEED_MIN;
+        s.vy = (s.vy / sp) * SPEED_MIN;
+      }
+
+      // Periodic mid-flight direction switch: rotate velocity by a
+      // random small angle (±~25°). This is what gives "more random,
+      // switching directions" beyond just edge-driven bounces.
+      if (t > s.nextNudge) {
+        const ang = (Math.random() - 0.5) * 0.9; // ±0.45 rad ≈ ±26°
+        const c = Math.cos(ang);
+        const sn = Math.sin(ang);
+        const nvx = s.vx * c - s.vy * sn;
+        const nvy = s.vx * sn + s.vy * c;
+        s.vx = nvx;
+        s.vy = nvy;
+        s.nextNudge = t + 1800 + Math.random() * 4500;
+      }
+
+      // Slow rotation sway via per-ghost sine.
+      const rot = Math.sin(s.rotPhase + (t / 1000) * s.rotFreq) * s.rotAmp;
+      applyTransform(i, rot);
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  requestAnimationFrame(tick);
 })();
 
 // Cursor-magnet for the manifesto inline image chips. When the cursor
@@ -128,8 +362,9 @@ const fitManifestoCopy = (() => {
   if (chips.length === 0) return;
 
   const FIELD_PX = 220; // radius of magnet influence
-  const STRENGTH_PX = 90; // max displacement at point-blank range
-  const PIXEL_PX = 110; // radius at which the chip starts pixelating
+  const STRENGTH_PX = 30; // max displacement at point-blank range
+  const PIXEL_PX = 170; // radius at which the chip starts pixelating
+  const FREEZE_AT = 0.15; // pixelize value that freezes the magnet
 
   let cursor = null;
   let rafId = null;
@@ -140,35 +375,53 @@ const fitManifestoCopy = (() => {
 
     for (const chip of chips) {
       const rect = chip.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const dx = cursor.x - cx;
-      const dy = cursor.y - cy;
-      const dist = Math.hypot(dx, dy);
+      // Live (post-transform) centre — used for the magnet vector.
+      const cxLive = rect.left + rect.width / 2;
+      const cyLive = rect.top + rect.height / 2;
+      const dxLive = cursor.x - cxLive;
+      const dyLive = cursor.y - cyLive;
+      const distLive = Math.hypot(dxLive, dyLive);
 
-      if (dist < FIELD_PX) {
-        // Falloff: 1.0 at the chip center, 0.0 at the field edge. Squared
-        // for a snappier "push" near the chip and gentler near the edge.
-        const falloff = (1 - dist / FIELD_PX) ** 2;
-        // Push direction = AWAY from cursor (chip center − cursor).
-        const len = Math.max(dist, 0.001);
-        const pushX = (-dx / len) * falloff * STRENGTH_PX;
-        const pushY = (-dy / len) * falloff * STRENGTH_PX;
-        chip.style.setProperty("--push-x", `${pushX.toFixed(2)}px`);
-        chip.style.setProperty("--push-y", `${pushY.toFixed(2)}px`);
+      // Static (pre-magnet) centre — subtract the chip's current
+      // --push-x / --push-y. This is the chip's natural footprint
+      // before the magnet displacement.
+      const styles = getComputedStyle(chip);
+      const pushX = parseFloat(styles.getPropertyValue("--push-x")) || 0;
+      const pushY = parseFloat(styles.getPropertyValue("--push-y")) || 0;
+      const cxStatic = cxLive - pushX;
+      const cyStatic = cyLive - pushY;
+      const distStatic = Math.hypot(
+        cursor.x - cxStatic,
+        cursor.y - cyStatic,
+      );
+
+      // Pixelize fires off whichever is CLOSER — the visible (live)
+      // chip or its natural footprint. So whether the user follows
+      // the chip with their cursor or just hovers over where the
+      // chip "should be", the disintegrate triggers.
+      const closer = Math.min(distLive, distStatic);
+      let pixelize = 0;
+      if (closer < PIXEL_PX) pixelize = 1 - closer / PIXEL_PX;
+      chip.style.setProperty("--pixelize", pixelize.toFixed(3));
+
+      // Magnet: push only while pixelize hasn't really started yet.
+      // Once the chip is meaningfully disintegrating (>FREEZE_AT) we
+      // freeze the magnet so the chip stops fleeing — otherwise it
+      // would slide out from under the cursor mid-fade and the
+      // disintegrate visual would never complete.
+      if (pixelize >= FREEZE_AT) {
+        // Frozen — don't change push values; let them coast / settle.
+      } else if (distLive < FIELD_PX) {
+        const falloff = (1 - distLive / FIELD_PX) ** 2;
+        const len = Math.max(distLive, 0.001);
+        const pushPx = (-dxLive / len) * falloff * STRENGTH_PX;
+        const pushPy = (-dyLive / len) * falloff * STRENGTH_PX;
+        chip.style.setProperty("--push-x", `${pushPx.toFixed(2)}px`);
+        chip.style.setProperty("--push-y", `${pushPy.toFixed(2)}px`);
       } else {
-        // Out of range — let the transition return the chip to rest.
         chip.style.setProperty("--push-x", "0px");
         chip.style.setProperty("--push-y", "0px");
       }
-
-      // Pixelate-disappear: ramps up only when the cursor is very
-      // close to (or directly over) the chip. Independent of the
-      // magnet so a fast cursor that "catches" the chip will still
-      // fade it out.
-      let pixelize = 0;
-      if (dist < PIXEL_PX) pixelize = 1 - dist / PIXEL_PX;
-      chip.style.setProperty("--pixelize", pixelize.toFixed(3));
     }
   }
 

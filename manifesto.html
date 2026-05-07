@@ -8,13 +8,14 @@
       content="GL/TCH manifesto — a traveling fashion exhibition exploring 2026 technology and aesthetics."
     />
     <title>GL/TCH — Manifesto</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800;900&family=Instrument+Serif:ital@0;1&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=132" />
+    <link rel="stylesheet" href="styles.css?v=144" />
   </head>
   <body class="has-manifesto is-contrast">
     <a class="skip" href="#manifesto">Skip to content</a>
@@ -71,19 +72,34 @@
 
       <footer class="manifesto__rail">
         <p class="manifesto__rail-tag">A traveling fashion show in San Francisco</p>
-        <div class="manifesto__rail-controls">
-          <button class="manifesto__mode-toggle" type="button" aria-pressed="true">
-            Art mode
-          </button>
-          <button class="manifesto__robot-toggle" type="button" aria-pressed="false">
-            Hide robot
-          </button>
-        </div>
+        <button class="manifesto__mode-toggle" type="button" aria-pressed="true">
+          Art mode
+        </button>
         <p class="manifesto__rail-meta">GL/TCH · FALL 2026 · SF</p>
       </footer>
+
+      <section class="manifesto-venn" aria-label="Fear and utopia">
+        <div class="venn" role="img" aria-label="Venn diagram with fear on the left and utopia on the right">
+          <div class="venn__ghosts" aria-hidden="true">
+            <img class="venn__ghost" src="assets/venn-diagram/Medico-Mechanische Gymnastik 1892.jpg" alt="" loading="lazy" decoding="async" />
+            <img class="venn__ghost" src="assets/venn-diagram/Flammability Demonstration 1910.jpg" alt="" loading="lazy" decoding="async" />
+            <img class="venn__ghost" src="assets/venn-diagram/Pygmy by Bayard 1870.jpg" alt="" loading="lazy" decoding="async" />
+            <img class="venn__ghost" src="assets/venn-diagram/Talking Machine Orange 1879.jpg" alt="" loading="lazy" decoding="async" />
+            <img class="venn__ghost" src="assets/venn-diagram/Title Page Illustration Mad Fashions 1642.jpg" alt="" loading="lazy" decoding="async" />
+            <img class="venn__ghost" src="assets/venn-diagram/Dorothy Levitt Favourite Photograph.jpg" alt="" loading="lazy" decoding="async" />
+            <img class="venn__ghost" src="assets/venn-diagram/George Edwin Marks 1899 Image.jpg" alt="" loading="lazy" decoding="async" />
+            <img class="venn__ghost" src="assets/venn-diagram/George Edwin Marks Image 1899.jpg" alt="" loading="lazy" decoding="async" />
+            <img class="venn__ghost" src="assets/venn-diagram/Reuben Jasper Spalding Flying Machine.jpg" alt="" loading="lazy" decoding="async" />
+          </div>
+          <span class="venn__label venn__label--left">fear</span>
+          <span class="venn__label venn__label--right">utopia</span>
+          <div class="venn__circle venn__circle--left"></div>
+          <div class="venn__circle venn__circle--right"></div>
+        </div>
+      </section>
     </main>
 
     <script src="main.js" defer></script>
-    <script src="manifesto.js?v=18" defer></script>
+    <script src="manifesto.js?v=26" defer></script>
   </body>
 </html>
