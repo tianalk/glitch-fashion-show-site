@@ -1,5 +1,19 @@
 /* GLITCH — ring layout matched to reference: nav + circular portrait ring + inner type */
 
+/* Register the manifesto-chip magnet variables as <length>-typed custom
+   properties so transitions on them interpolate smoothly (without
+   @property they'd be treated as raw strings and would jump-snap). */
+@property --push-x {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --push-y {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
 /* Local custom font.  Drop the downloaded file into assets/fonts/ at any
    one of the paths below — the browser will use whichever it finds. */
 @font-face {
@@ -273,16 +287,15 @@ body {
 
 /* Portrait robot movie locked to the bottom-center of the viewport. The
    editorial copy scrolls behind it, leaving a center gap for the figure. */
-/* Robot is anchored at the bottom of the initial viewport (top: 100vh
-   minus its own height) and absolutely positioned so it scrolls AWAY with
-   the page rather than staying pinned. */
+/* Robot fills the hero — anchored to the top of the body and absolutely
+   positioned so it scrolls AWAY with the page rather than staying pinned. */
 .has-figure .robot-movie {
   position: absolute;
   left: 50%;
-  top: 20vh;
+  top: 0;
   transform: translateX(-50%);
   width: auto;
-  height: 80vh;
+  height: 100vh;
   max-width: 100%;
   object-fit: contain;
   object-position: bottom center;
@@ -295,7 +308,7 @@ body {
   .has-figure .robot-movie {
     width: 100%;
     height: auto;
-    max-height: 80vh;
+    max-height: 100vh;
   }
 }
 
@@ -420,10 +433,9 @@ body {
 .has-figure .editorial {
   display: block;
   min-height: auto;
-  /* Top padding sits the editorial low enough that the title + robot own
-     the upper portion of the hero, while still letting the first photo
-     in each column peek above the fold. */
-  padding: clamp(28rem, 62vh, 42rem) clamp(1.25rem, 3vw, 3rem)
+  /* Top padding sits the editorial just barely above the fold (~2vh of
+     content peeks at the bottom of the initial viewport). */
+  padding: clamp(44rem, 98vh, 60rem) clamp(1.25rem, 3vw, 3rem)
     clamp(3rem, 8vh, 6rem);
   margin: 0;
 
@@ -710,6 +722,475 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .ref-ring__cta {
     animation: none;
+  }
+}
+
+/* ============================================================
+   MANIFESTO — magazine-spread layout for /manifesto.html
+   Big bold headline-style sentence with the four approved images
+   dropped INLINE between words, sized to the cap-height of the
+   surrounding text. Inspired by editorial spreads like Apostrophe
+   "REPS".
+   ============================================================ */
+
+.has-manifesto {
+  --manifesto-bg: #ff48b0;
+  --manifesto-ink: #00b74f;
+  background: var(--manifesto-bg);
+  color: var(--manifesto-ink);
+  min-height: 100vh;
+  margin: 0;
+  transition:
+    background 0.4s ease,
+    color 0.4s ease;
+}
+
+/* High-contrast mode: white background, green ink. */
+.has-manifesto.is-contrast {
+  --manifesto-bg: #ffffff;
+  --manifesto-ink: #00b74f;
+}
+
+/* Wrapper for inline rail controls — keeps the buttons grouped together
+   in the centre of the rail. */
+.has-manifesto .manifesto__rail-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Rail control buttons (mode toggle, robot toggle, etc.) — must be
+   discoverable by colorblind users, so they rely on LUMINANCE contrast
+   (black/white) rather than just hue. Small pill that inverts against
+   its background: black-on-white in art mode, white-on-black in
+   high-contrast mode. */
+.has-manifesto .manifesto__mode-toggle,
+.has-manifesto .manifesto__robot-toggle {
+  appearance: none;
+  border: 1.5px solid #000;
+  padding: 0.4rem 0.85rem;
+  margin: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #000000;
+  line-height: 1;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.18s ease;
+}
+
+.has-manifesto.is-contrast .manifesto__mode-toggle,
+.has-manifesto.is-contrast .manifesto__robot-toggle {
+  background: #000000;
+  color: #ffffff;
+  border-color: #000000;
+}
+
+.has-manifesto .manifesto__mode-toggle:hover,
+.has-manifesto .manifesto__mode-toggle:focus-visible,
+.has-manifesto .manifesto__robot-toggle:hover,
+.has-manifesto .manifesto__robot-toggle:focus-visible {
+  outline: none;
+  transform: translateY(-1px);
+}
+
+/* The pixel logo is itself pink, which disappears against the pink
+   manifesto background. Hide it on this page — the GL/TCH wordmark in
+   the body copy already does the branding work. */
+.has-manifesto .glitch-logo {
+  display: none;
+}
+
+/* Flex column layout: the manifesto container is the full viewport
+   height, the spread fills all the space between the top padding and
+   the (fixed) rail at the bottom, and the headline scales to fill
+   that space. The rail and the robot are both position: fixed so they
+   don't participate in this flow. */
+.has-manifesto .manifesto {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding-top: clamp(1rem, 3vh, 2.5rem);
+  padding-left: clamp(1.5rem, 4vw, 4rem);
+  padding-right: clamp(1.5rem, 4vw, 4rem);
+  /* Rail is fixed-positioned, so we just need enough bottom padding so
+     the headline doesn't sit underneath the rail. */
+  padding-bottom: clamp(6rem, 12vh, 10rem);
+  position: relative;
+  box-sizing: border-box;
+}
+
+.has-manifesto .manifesto__spread {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 0;
+}
+
+/* (Spread layout rules consolidated above — block flow, with margin
+   below it that creates the gap before the rail. No flex needed.) */
+
+/* Robot pinned to the viewport bottom-right, just above the fixed
+   bottom rail. Both are position: fixed so they stay anchored to the
+   visible viewport regardless of how tall the headline content gets.
+   Mix-blend-mode makes the GIF's white background "punch through" the
+   pink page so it reads as if it were transparent. */
+.has-manifesto .manifesto__robot {
+  position: fixed;
+  right: clamp(0.5rem, 2vw, 2rem);
+  bottom: calc(1.5rem + clamp(2rem, 4vh, 3.25rem));
+  width: clamp(14rem, 30vw, 32rem);
+  height: auto;
+  display: block;
+  pointer-events: none;
+  z-index: 5;
+  mix-blend-mode: multiply;
+  opacity: 0.55;
+  transition: opacity 0.25s ease;
+}
+
+/* Toggled by the rail "Hide robot" button. Visibility hidden (rather
+   than display: none) so the JS that aligns the robot's bottom edge to
+   the rail still has a measurable element to read. */
+.has-manifesto.is-robot-hidden .manifesto__robot {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* The headline sentence. Tight, chunky, condensed-feeling Inter Black —
+   clamps from ~36px to ~104px so it fills the spread on big screens but
+   stays readable on phones. Word-break: keep-all + small letter-spacing
+   keeps the magazine "block" feel. */
+.has-manifesto .manifesto__copy {
+  margin: 0;
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 900;
+  /* Wishful "as big as possible" CSS starting size. JS in manifesto.js
+     measures the rendered height after layout and shrinks the font-
+     size in a single pass if the headline would overflow 90vh — see
+     fitManifestoCopy(). The CSS only has to cap at the upper bound
+     where the text would obviously overshoot on huge displays. */
+  font-size: clamp(1.4rem, min(8vw, 14vh), 7rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  text-align: left;
+  max-width: 85vw;
+  hyphens: none;
+}
+
+.has-manifesto .manifesto__copy span {
+  display: inline;
+  vertical-align: baseline;
+}
+
+/* In high-contrast mode every other technology term flips to pink so
+   the list alternates green / pink down the page — matching the
+   art-mode rhythm. */
+.has-manifesto.is-contrast .manifesto__tech--alt {
+  color: #ff48b0;
+}
+
+/* Per-letter glitch.
+
+   JS wraps every word in the manifesto headline with a non-breaking
+   .manifesto__word-wrap and every character inside that with a
+   .manifesto__letter. A pointermove handler sets --glitch (0..1) on
+   each letter based on its distance to the cursor. The styles below
+   convert that scalar into a heavy, busy, "broken pixels" visual:
+
+     - bigger stepped jitter (translate, rotate, skew, scale)
+     - 7-layer text-shadow chromatic aberration
+       (cyan / magenta / yellow + brand pink / brand green + ghost
+       trails in currentColor)
+     - blur + contrast pump
+     - hard fade-to-0 so letters near the cursor fully vanish
+
+   At rest (--glitch: 0) every property folds to its no-op value so the
+   headline reads as plain inline text. */
+
+.has-manifesto .manifesto__word-wrap {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.has-manifesto .manifesto__letter {
+  /* --glitch is the max of cursor proximity and ambient noise so the
+     two effects compose without fighting each other. */
+  --cursor-glitch: 0;
+  --noise-glitch: 0;
+  --glitch: max(var(--cursor-glitch), var(--noise-glitch));
+  --glitch-dx: 0;
+  --glitch-dy: 0;
+  --glitch-dr: 0;
+  display: inline-block;
+  position: relative;
+  transform:
+    translate(
+      calc(var(--glitch-dx) * var(--glitch) * 26px),
+      calc(var(--glitch-dy) * var(--glitch) * 20px)
+    )
+    rotate(calc(var(--glitch-dr) * var(--glitch) * 16deg))
+    skewX(calc(var(--glitch-dx) * var(--glitch) * 18deg))
+    scale(calc(1 + var(--glitch) * 0.25));
+  /* Multiplier > 1 so the letter fully vanishes well before glitch
+     reaches its peak — cursor "burns" through the text. */
+  opacity: calc(1 - var(--glitch) * 1.5);
+  filter:
+    blur(calc(var(--glitch) * 1.4px))
+    contrast(calc(1 + var(--glitch) * 1.6))
+    saturate(calc(1 + var(--glitch) * 2));
+  text-shadow:
+    /* Wide RGB chromatic split */
+    calc(var(--glitch) * -7px) 0 0 #00ffff,
+    calc(var(--glitch) * 7px) 0 0 #ff00ff,
+    /* Yellow/cyan vertical aberration */
+    0 calc(var(--glitch) * -4px) 0 #ffff00,
+    0 calc(var(--glitch) * 4px) 0 #00ffff,
+    /* Brand-color far ghosts */
+    calc(var(--glitch) * 11px) calc(var(--glitch) * 1px) 0 #ff48b0,
+    calc(var(--glitch) * -11px) calc(var(--glitch) * -1px) 0 #00b74f,
+    /* CurrentColor smear trails */
+    calc(var(--glitch) * 2px) calc(var(--glitch) * 3px) 0 currentColor,
+    calc(var(--glitch) * -2px) calc(var(--glitch) * -3px) 0 currentColor;
+  /* Stepped easing on structural properties → reads as pixely / dropped
+     frames rather than a smooth tween. */
+  transition:
+    transform 60ms steps(2, end),
+    opacity 50ms steps(2, end),
+    filter 60ms linear,
+    text-shadow 60ms linear;
+  will-change: transform, opacity, filter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .has-manifesto .manifesto__letter {
+    transition: none;
+    transform: none;
+    opacity: 1;
+    filter: none;
+    text-shadow: none;
+  }
+}
+
+/* Inline image chips — the LAYOUT box is sized to roughly the cap-height
+   of the surrounding type (height: 1em), so the chips don't push the
+   line-height. They are then visually SCALED UP via transform: scale()
+   inside the jitter keyframes — transforms don't affect layout, so the
+   visual image overflows into the lines above/below without changing
+   the bounding box. This gives chips a "lower bounding hit box" while
+   still reading as bold photo blocks within the headline. */
+.has-manifesto .manifesto__chip {
+  --chip-scale: 1.53;
+  --push-x: 0px;
+  --push-y: 0px;
+  /* Pixelate-disappear: 0..1, driven by JS based on how close the
+     cursor is to the chip. The blur + extreme contrast trick
+     posterizes the chip into chunky pixel blocks before opacity
+     finishes the job. */
+  --pixelize: 0;
+  display: inline-block;
+  height: 1em;
+  width: auto;
+  max-width: 1em;
+  object-fit: cover;
+  vertical-align: middle;
+  margin: 0 0.45em;
+  border-radius: 2px;
+  will-change: transform, filter, opacity;
+  animation: manifesto-jitter 4.6s steps(10, end) infinite;
+  transform: scale(var(--chip-scale));
+  filter:
+    blur(calc(var(--pixelize) * 8px))
+    contrast(calc(1 + var(--pixelize) * 9))
+    saturate(calc(1 + var(--pixelize) * 2));
+  opacity: calc(1 - var(--pixelize));
+  /* Crisp scaled rendering keeps the high-contrast posterized output
+     looking blocky rather than smooth. */
+  image-rendering: pixelated;
+  transition:
+    --push-x 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.4),
+    --push-y 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.4),
+    filter 90ms steps(3, end),
+    opacity 90ms steps(2, end);
+}
+
+/* Each chip uses a slightly different scale + animation timing so the
+   composition feels alive rather than synchronized. */
+.has-manifesto .manifesto__chip--a {
+  --chip-scale: 1.67;
+  animation-duration: 4.2s;
+  animation-delay: 0s;
+}
+
+.has-manifesto .manifesto__chip--b {
+  --chip-scale: 1.53;
+  animation-duration: 5.4s;
+  animation-delay: -1.3s;
+}
+
+.has-manifesto .manifesto__chip--c {
+  --chip-scale: 1.76;
+  animation-duration: 4.8s;
+  animation-delay: -2.4s;
+}
+
+.has-manifesto .manifesto__chip--d {
+  --chip-scale: 1.58;
+  animation-duration: 5.0s;
+  animation-delay: -3.5s;
+}
+
+.has-manifesto .manifesto__chip--e {
+  --chip-scale: 1.71;
+  animation-duration: 4.5s;
+  animation-delay: -1.9s;
+}
+
+/* Glitchy 10-step keyframe — wider XY translates so the chips visibly
+   drift over adjacent words at times, plus a tiny rotation. Each keyframe
+   re-applies scale(var(--chip-scale)) so the visual size persists across
+   the jitter motion. `steps(10, end)` on the chip makes the jumps snap
+   between frames instead of tweening — stop-motion / TV-static feel. */
+/* Each keyframe combines the jitter offset with the cursor "push" via
+   var(--push-x) / var(--push-y). The push is set by JS in response to
+   pointermove so chips drift away from the cursor like magnets. */
+@keyframes manifesto-jitter {
+  0% {
+    transform:
+      translate(var(--push-x), var(--push-y))
+      rotate(0deg)
+      scale(var(--chip-scale));
+  }
+  10% {
+    transform:
+      translate(calc(var(--push-x) - 2px), calc(var(--push-y) + 1px))
+      rotate(-0.6deg)
+      scale(var(--chip-scale));
+  }
+  20% {
+    transform:
+      translate(calc(var(--push-x) + 3px), calc(var(--push-y) - 1px))
+      rotate(0.9deg)
+      scale(var(--chip-scale));
+  }
+  30% {
+    transform:
+      translate(calc(var(--push-x) - 3px), calc(var(--push-y) - 1px))
+      rotate(-0.45deg)
+      scale(var(--chip-scale));
+  }
+  40% {
+    transform:
+      translate(calc(var(--push-x) + 1px), calc(var(--push-y) + 3px))
+      rotate(0.75deg)
+      scale(var(--chip-scale));
+  }
+  50% {
+    transform:
+      translate(calc(var(--push-x) - 1px), calc(var(--push-y) - 3px))
+      rotate(-0.75deg)
+      scale(var(--chip-scale));
+  }
+  60% {
+    transform:
+      translate(calc(var(--push-x) + 4px), calc(var(--push-y) + 1px))
+      rotate(0.45deg)
+      scale(var(--chip-scale));
+  }
+  70% {
+    transform:
+      translate(calc(var(--push-x) - 4px), calc(var(--push-y) + 1px))
+      rotate(-0.9deg)
+      scale(var(--chip-scale));
+  }
+  80% {
+    transform:
+      translate(calc(var(--push-x) + 2px), calc(var(--push-y) - 2px))
+      rotate(0.6deg)
+      scale(var(--chip-scale));
+  }
+  90% {
+    transform:
+      translate(calc(var(--push-x) - 1px), calc(var(--push-y) + 2px))
+      rotate(-0.45deg)
+      scale(var(--chip-scale));
+  }
+  100% {
+    transform:
+      translate(var(--push-x), var(--push-y))
+      rotate(0deg)
+      scale(var(--chip-scale));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .has-manifesto .manifesto__chip {
+    animation: none;
+  }
+}
+
+/* Bottom rail: tagline on the left, meta on the right, separated like a
+   masthead/colophon. */
+.has-manifesto .manifesto__rail {
+  position: fixed;
+  left: clamp(1.5rem, 4vw, 4rem);
+  right: clamp(1.5rem, 4vw, 4rem);
+  bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding-top: clamp(1.5rem, 3vh, 2.5rem);
+  border-top: 1px solid currentColor;
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(0.7rem, 0.95vw, 0.95rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.has-manifesto .manifesto__rail-tag,
+.has-manifesto .manifesto__rail-meta {
+  margin: 0;
+}
+
+.has-manifesto .manifesto__rail-meta {
+  text-align: right;
+  letter-spacing: 0.16em;
+}
+
+/* On narrow screens make the robot a smaller corner accent so it doesn't
+   dominate the spread. */
+@media (max-width: 720px) {
+  .has-manifesto .manifesto__robot {
+    width: clamp(10rem, 38vw, 16rem);
+    right: clamp(0.5rem, 3vw, 1.5rem);
+    bottom: clamp(3rem, 8vh, 5rem);
+  }
+
+  .has-manifesto .manifesto__copy {
+    font-size: clamp(1.6rem, 7vw, 2.6rem);
+    line-height: 1.02;
+  }
+
+  .has-manifesto .manifesto__rail {
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .has-manifesto .manifesto__rail-meta {
+    text-align: left;
+    letter-spacing: 0.1em;
   }
 }
 
