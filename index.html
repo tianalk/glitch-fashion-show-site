@@ -1,53 +1,111 @@
 <!DOCTYPE html>
+<!--
+  This page is the GL/TCH manifesto — also reachable at /manifesto.html.
+  index.html and manifesto.html should stay in sync; only the <title>
+  and <meta description> intentionally differ between them.
+  Old ring/orbit layout lives at /archived/.
+-->
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="GLITCH — traveling fashion exhibition, San Francisco." />
-    <title>GLITCH</title>
+    <meta
+      name="description"
+      content="GL/TCH — a traveling fashion exhibition exploring 2026 technology and aesthetics."
+    />
+    <title>GL/TCH</title>
     <link rel="icon" type="image/png" href="assets/favicon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800;900&family=Instrument+Serif:ital@0;1&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=144" />
   </head>
-  <body>
-    <a class="skip" href="#land">Skip to content</a>
+  <body class="has-manifesto is-contrast">
+    <a class="skip" href="#manifesto">Skip to content</a>
 
-<main id="land" class="ref-main">
-      <div class="ref-ring">
-        <div class="ref-ring__hub">
-          <h1 class="ref-ring__headline">a travelling fashion show in San Francisco</h1>
-          <p class="ref-ring__cta">Scroll to explore</p>
+    <a class="glitch-logo" href="index.html" aria-label="GL/TCH — home">
+      <img src="assets/glitch_logo.png" alt="GL/TCH" decoding="async" />
+    </a>
+
+
+    <main id="manifesto" class="manifesto">
+      <section class="manifesto__spread" aria-label="GL/TCH manifesto">
+        <img
+          class="manifesto__robot"
+          src="assets/Custom Video Design.gif"
+          alt=""
+          decoding="async"
+          aria-hidden="true"
+        />
+
+        <p class="manifesto__copy">
+          To GL/TCH   is to take a 2026 technology — <span class="manifesto__tech">generative AI</span><img
+            class="manifesto__chip manifesto__chip--a"
+            src="assets/approved/IMG_6470.png"
+            alt=""
+            loading="eager"
+            decoding="async"
+          /><span class="manifesto__tech manifesto__tech--alt">face recognition</span><img
+            class="manifesto__chip manifesto__chip--b"
+            src="assets/approved/IMG_2119.png"
+            alt=""
+            loading="eager"
+            decoding="async"
+          /><span class="manifesto__tech">surveillance</span><img
+            class="manifesto__chip manifesto__chip--c"
+            src="assets/approved/IMG_2356.png"
+            alt=""
+            loading="eager"
+            decoding="async"
+          /><span class="manifesto__tech manifesto__tech--alt">recommendation algorithms</span><img
+            class="manifesto__chip manifesto__chip--d"
+            src="assets/approved/AI Images from Text & Photo (8).png"
+            alt=""
+            loading="eager"
+            decoding="async"
+          /><span class="manifesto__tech">cryptocurrency</span><img
+            class="manifesto__chip manifesto__chip--e"
+            src="assets/approved/IMG_street.png"
+            alt=""
+            loading="lazy"
+            decoding="async"
+          /><span class="manifesto__tech manifesto__tech--alt">online betting</span> — and explore how body and garment aesthetics warp how we view this technology.
+        </p>
+      </section>
+
+      <footer class="manifesto__rail">
+        <p class="manifesto__rail-tag">A traveling fashion show in San Francisco</p>
+        <button class="manifesto__mode-toggle" type="button" aria-pressed="true">
+          Art mode
+        </button>
+        <p class="manifesto__rail-meta">GL/TCH · FALL 2026 · SF</p>
+      </footer>
+
+      <section class="manifesto-venn" aria-label="Fear and utopia">
+        <div class="venn" role="img" aria-label="Venn diagram with fear on the left and utopia on the right">
+          <div class="venn__ghosts" aria-hidden="true">
+            <img class="venn__ghost" src="assets/venn-diagram/Medico-Mechanische Gymnastik 1892.jpg" alt="" loading="lazy" decoding="async" />
+            <img class="venn__ghost" src="assets/venn-diagram/Flammability Demonstration 1910.jpg" alt="" loading="lazy" decoding="async" />
+            <img class="venn__ghost" src="assets/venn-diagram/Pygmy by Bayard 1870.jpg" alt="" loading="lazy" decoding="async" />
+            <img class="venn__ghost" src="assets/venn-diagram/Talking Machine Orange 1879.jpg" alt="" loading="lazy" decoding="async" />
+            <img class="venn__ghost" src="assets/venn-diagram/Title Page Illustration Mad Fashions 1642.jpg" alt="" loading="lazy" decoding="async" />
+            <img class="venn__ghost" src="assets/venn-diagram/Dorothy Levitt Favourite Photograph.jpg" alt="" loading="lazy" decoding="async" />
+            <img class="venn__ghost" src="assets/venn-diagram/George Edwin Marks 1899 Image.jpg" alt="" loading="lazy" decoding="async" />
+            <img class="venn__ghost" src="assets/venn-diagram/George Edwin Marks Image 1899.jpg" alt="" loading="lazy" decoding="async" />
+            <img class="venn__ghost" src="assets/venn-diagram/Reuben Jasper Spalding Flying Machine.jpg" alt="" loading="lazy" decoding="async" />
+          </div>
+          <span class="venn__label venn__label--left">fear</span>
+          <span class="venn__label venn__label--right">utopia</span>
+          <div class="venn__circle venn__circle--left"></div>
+          <div class="venn__circle venn__circle--right"></div>
         </div>
-
-        <ul class="ref-ring__orbit" aria-hidden="true">
-          <li class="ref-ring__cell" style="--i: 0; --offset: -3deg"><figure class="ref-thumb"><img src="assets/optimized/pier-39.jpg" alt="" loading="eager" decoding="async" /></figure></li>
-          <li class="ref-ring__cell" style="--i: 1; --offset: 5deg"><figure class="ref-thumb"><img src="assets/optimized/fountain.jpg" alt="" loading="lazy" decoding="async" /></figure></li>
-          <li class="ref-ring__cell" style="--i: 2; --offset: -7deg"><figure class="ref-thumb"><img src="assets/optimized/painted-ladies.jpg" alt="" loading="lazy" decoding="async" /></figure></li>
-          <li class="ref-ring__cell" style="--i: 3; --offset: 4deg"><figure class="ref-thumb"><img src="assets/optimized/elephant-seals.jpg" alt="" loading="lazy" decoding="async" /></figure></li>
-          <li class="ref-ring__cell" style="--i: 4; --offset: -1deg"><figure class="ref-thumb"><img src="assets/optimized/gen-bridge-fog.jpg" alt="" loading="lazy" decoding="async" /></figure></li>
-          <li class="ref-ring__cell" style="--i: 5; --offset: 6deg"><figure class="ref-thumb"><img src="assets/optimized/gen-cable-car-hill.jpg" alt="" loading="lazy" decoding="async" /></figure></li>
-          <li class="ref-ring__cell" style="--i: 6; --offset: -5deg"><figure class="ref-thumb"><img src="assets/optimized/gen-otter-bay.jpg" alt="" loading="lazy" decoding="async" /></figure></li>
-          <li class="ref-ring__cell" style="--i: 7; --offset: 3deg"><figure class="ref-thumb"><img src="assets/optimized/sf-nat-17.jpg" alt="" loading="lazy" decoding="async" /></figure></li>
-          <li class="ref-ring__cell" style="--i: 8; --offset: -8deg"><figure class="ref-thumb"><img src="assets/optimized/sf-coast-mood-ai.jpg" alt="" loading="lazy" decoding="async" /></figure></li>
-          <li class="ref-ring__cell" style="--i: 9; --offset: 2deg"><figure class="ref-thumb"><img src="assets/optimized/bay-windows-ai.jpg" alt="" loading="lazy" decoding="async" /></figure></li>
-          <li class="ref-ring__cell" style="--i: 10; --offset: 7deg"><figure class="ref-thumb"><img src="assets/optimized/sf-play-mission-mural.jpg" alt="" loading="lazy" decoding="async" /></figure></li>
-          <li class="ref-ring__cell" style="--i: 11; --offset: -4deg"><figure class="ref-thumb"><img src="assets/optimized/sf-play-ferry-pigeons.jpg" alt="" loading="lazy" decoding="async" /></figure></li>
-          <li class="ref-ring__cell" style="--i: 12; --offset: 5deg"><figure class="ref-thumb"><img src="assets/optimized/sf-clean-01.jpg" alt="" loading="lazy" decoding="async" /></figure></li>
-          <li class="ref-ring__cell" style="--i: 13; --offset: -2deg"><figure class="ref-thumb"><img src="assets/optimized/sf-clean-02.jpg" alt="" loading="lazy" decoding="async" /></figure></li>
-          <li class="ref-ring__cell" style="--i: 14; --offset: 6deg"><figure class="ref-thumb"><img src="assets/optimized/sf-clean-03.jpg" alt="" loading="lazy" decoding="async" /></figure></li>
-          <li class="ref-ring__cell" style="--i: 15; --offset: -6deg"><figure class="ref-thumb"><img src="assets/optimized/sf-nat-15.jpg" alt="" loading="lazy" decoding="async" /></figure></li>
-          <li class="ref-ring__cell" style="--i: 16; --offset: 1deg"><figure class="ref-thumb"><img src="assets/optimized/sf-nat-16.jpg" alt="" loading="lazy" decoding="async" /></figure></li>
-          <li class="ref-ring__cell" style="--i: 17; --offset: 8deg"><figure class="ref-thumb"><img src="assets/optimized/sf-play-robot-market.jpg" alt="" loading="lazy" decoding="async" /></figure></li>
-          <li class="ref-ring__cell" style="--i: 18; --offset: -3deg"><figure class="ref-thumb"><img src="assets/optimized/sf-nat-18.jpg" alt="" loading="lazy" decoding="async" /></figure></li>
-        </ul>
-      </div>
+      </section>
     </main>
 
     <script src="main.js" defer></script>
+    <script src="manifesto.js?v=27" defer></script>
   </body>
 </html>

@@ -131,8 +131,22 @@ const fitManifestoCopy = (() => {
 
   const reducedMQ = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-  const SPEED_MIN = 50; // px/s — clamp lower bound so ghosts never stall
-  const SPEED_MAX = 130; // px/s — clamp upper bound so they never get too zippy
+  // Reference values are calibrated for an ~800px-wide venn (typical
+  // desktop). They scale proportionally with the actual venn width so:
+  //   - On a phone (~360px venn) ghost clips are tiny (~50–80px)
+  //     instead of monstrous (128–288px) and the same crossing time
+  //     applies (slower px/s in absolute terms).
+  //   - On a 1440-wide desktop the clips and motion read as before.
+  const REF_WIDTH = 800;
+  const REF_SPEED_MIN = 50;
+  const REF_SPEED_MAX = 130;
+  // Hard size floor / ceiling so really tiny / really huge viewports
+  // still produce sensible-looking clips.
+  const SIZE_MIN_PX = 40;
+  const SIZE_MAX_PX = 280;
+
+  let speedMin = REF_SPEED_MIN;
+  let speedMax = REF_SPEED_MAX;
 
   // Per-ghost mutable state.
   const state = ghosts.map(() => ({
@@ -147,6 +161,11 @@ const fitManifestoCopy = (() => {
     grabbed: false,
     grabDx: 0, // pointer offset within the ghost on grab (in venn coords)
     grabDy: 0,
+    // Stable across resizes: each ghost has a fractional size (% of
+    // venn width) and a fixed aspect ratio. The actual pixel size is
+    // recomputed in applySizes() whenever the venn box changes.
+    sizeFrac: 0.14 + Math.random() * 0.08, // 14–22% of venn width
+    aspect: 0.6 + Math.random() * 0.6, // 0.6–1.2
   }));
 
   function applyTransform(i, rotDeg) {
@@ -155,18 +174,35 @@ const fitManifestoCopy = (() => {
   }
 
   function randomVelocity() {
-    const speed = SPEED_MIN + Math.random() * (SPEED_MAX - SPEED_MIN);
+    const speed = speedMin + Math.random() * (speedMax - speedMin);
     const angle = Math.random() * Math.PI * 2;
     return { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed };
   }
 
-  function seed() {
+  function applySizes() {
+    const r = venn.getBoundingClientRect();
     ghosts.forEach((ghost, i) => {
-      const sizeRem = 8 + Math.random() * 10; // 8–18rem
-      const aspect = 0.6 + Math.random() * 0.6; // 0.6–1.2
-      ghost.style.setProperty("--ghost-w", `${sizeRem.toFixed(2)}rem`);
-      ghost.style.setProperty("--ghost-aspect", aspect.toFixed(2));
+      const sizePx = Math.max(
+        SIZE_MIN_PX,
+        Math.min(SIZE_MAX_PX, r.width * state[i].sizeFrac)
+      );
+      ghost.style.setProperty("--ghost-w", `${sizePx.toFixed(0)}px`);
+      ghost.style.setProperty("--ghost-aspect", state[i].aspect.toFixed(2));
+    });
+  }
 
+  function updateSpeedBounds() {
+    const w = venn.getBoundingClientRect().width;
+    // Clamp the scale so motion stays "nice" on extreme viewport sizes.
+    const scale = Math.max(0.45, Math.min(1.6, w / REF_WIDTH));
+    speedMin = REF_SPEED_MIN * scale;
+    speedMax = REF_SPEED_MAX * scale;
+  }
+
+  function seed() {
+    applySizes();
+    updateSpeedBounds();
+    ghosts.forEach((_, i) => {
       const v = randomVelocity();
       state[i].vx = v.vx;
       state[i].vy = v.vy;
@@ -263,8 +299,24 @@ const fitManifestoCopy = (() => {
   let bounds = venn.getBoundingClientRect();
   const onResize = () => {
     bounds = venn.getBoundingClientRect();
+    applySizes();
+    updateSpeedBounds();
+    // Clamp existing positions to the new bounds so a shrinking
+    // viewport doesn't strand a ghost outside the box.
+    for (let i = 0; i < state.length; i++) {
+      const ghost = ghosts[i];
+      const w = ghost.offsetWidth;
+      const h = ghost.offsetHeight;
+      state[i].x = Math.max(0, Math.min(bounds.width - w, state[i].x));
+      state[i].y = Math.max(0, Math.min(bounds.height - h, state[i].y));
+    }
   };
   window.addEventListener("resize", onResize);
+
+  // Kick a measurement after layout has settled (initial CSS computed
+  // sizes for --ghost-w arrive on the next frame, and image decoding
+  // can also shift dimensions).
+  requestAnimationFrame(onResize);
 
   let lastT = performance.now();
   function tick(t) {
@@ -293,34 +345,37 @@ const fitManifestoCopy = (() => {
       // parallel one, so the post-bounce trajectory isn't a perfect
       // mirror of the pre-bounce one — produces the random
       // direction-switching feel.
+      // Kick magnitude is scaled to the current speed band so it
+      // doesn't feel violent on small mobile viewports.
+      const kick = (speedMax - speedMin) * 0.4 + speedMin * 0.2;
       if (s.x < 0) {
         s.x = 0;
         s.vx = Math.abs(s.vx) * (0.85 + Math.random() * 0.3);
-        s.vy += (Math.random() - 0.5) * 35;
+        s.vy += (Math.random() - 0.5) * kick;
       } else if (s.x > maxX) {
         s.x = maxX;
         s.vx = -Math.abs(s.vx) * (0.85 + Math.random() * 0.3);
-        s.vy += (Math.random() - 0.5) * 35;
+        s.vy += (Math.random() - 0.5) * kick;
       }
 
       if (s.y < 0) {
         s.y = 0;
         s.vy = Math.abs(s.vy) * (0.85 + Math.random() * 0.3);
-        s.vx += (Math.random() - 0.5) * 35;
+        s.vx += (Math.random() - 0.5) * kick;
       } else if (s.y > maxY) {
         s.y = maxY;
         s.vy = -Math.abs(s.vy) * (0.85 + Math.random() * 0.3);
-        s.vx += (Math.random() - 0.5) * 35;
+        s.vx += (Math.random() - 0.5) * kick;
       }
 
-      // Clamp speed to the target band.
+      // Clamp speed to the (viewport-scaled) target band.
       const sp = Math.hypot(s.vx, s.vy);
-      if (sp > SPEED_MAX) {
-        s.vx = (s.vx / sp) * SPEED_MAX;
-        s.vy = (s.vy / sp) * SPEED_MAX;
-      } else if (sp < SPEED_MIN && sp > 0) {
-        s.vx = (s.vx / sp) * SPEED_MIN;
-        s.vy = (s.vy / sp) * SPEED_MIN;
+      if (sp > speedMax) {
+        s.vx = (s.vx / sp) * speedMax;
+        s.vy = (s.vy / sp) * speedMax;
+      } else if (sp < speedMin && sp > 0) {
+        s.vx = (s.vx / sp) * speedMin;
+        s.vy = (s.vy / sp) * speedMin;
       }
 
       // Periodic mid-flight direction switch: rotate velocity by a
