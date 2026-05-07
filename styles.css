@@ -1,11 +1,26 @@
 /* GLITCH — ring layout matched to reference: nav + circular portrait ring + inner type */
 
+/* Local custom font.  Drop the downloaded file into assets/fonts/ at any
+   one of the paths below — the browser will use whichever it finds. */
+@font-face {
+  font-family: "Style Mono";
+  src:
+    url("assets/fonts/StyleMono.woff2") format("woff2"),
+    url("assets/fonts/StyleMono.woff") format("woff"),
+    url("assets/fonts/StyleMono.otf") format("opentype"),
+    url("assets/fonts/StyleMono.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --canvas: #fafaf9;
   --ink: #141413;
   --ink-soft: rgba(20, 20, 19, 0.42);
   --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --display: "Instrument Serif", "Times New Roman", Georgia, serif;
+  --mono: "Style Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
 *,
@@ -232,6 +247,443 @@ body {
   }
 }
 
+/* ——— Bottom figure overlay (robot.html) ——— */
+/*
+  The figure is fixed flush to the bottom of the viewport at full width.
+  Stacking on .has-figure pages:
+    orbit / cells (inside .ref-ring's isolated context) → behind figure
+    .figure-overlay  z-index 10 → above the ring
+    .ref-ring__hub   z-index 30 → above the figure (centered text stays readable)
+  Page canvas is forced to pure white so the image's white background
+  blends seamlessly with no visible seam.
+*/
+
+/* Force a pure-white canvas on the figure page so the image background
+   matches the page exactly. Override --canvas so all cascading uses
+   (body bg, nav gradient, .skip color, etc.) update together.
+   Also: position: relative on body makes it the containing block for
+   .figure-overlay's absolute positioning, and min-height > 100vh
+   creates scrollable space so the figure's lower portion sits below
+   the initial viewport — scrolling reveals the rest of her. */
+.has-figure {
+  --canvas: #ffffff;
+  background: var(--canvas);
+  position: relative;
+}
+
+/* Portrait robot movie locked to the bottom-center of the viewport. The
+   editorial copy scrolls behind it, leaving a center gap for the figure. */
+/* Robot is anchored at the bottom of the initial viewport (top: 100vh
+   minus its own height) and absolutely positioned so it scrolls AWAY with
+   the page rather than staying pinned. */
+.has-figure .robot-movie {
+  position: absolute;
+  left: 50%;
+  top: 20vh;
+  transform: translateX(-50%);
+  width: auto;
+  height: 80vh;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+  z-index: 15;
+  pointer-events: none;
+  background: transparent;
+}
+
+@media (max-aspect-ratio: 1/1) {
+  .has-figure .robot-movie {
+    width: 100%;
+    height: auto;
+    max-height: 80vh;
+  }
+}
+
+/* Pixel-art logo pinned to the top center of the figure page. Keeps the
+   image crisp at any size by disabling smoothing on the upscaled bitmap. */
+.has-figure .glitch-logo {
+  position: fixed;
+  top: clamp(1rem, 2.5vh, 2rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: block;
+  line-height: 0;
+}
+
+.has-figure .glitch-logo img {
+  display: block;
+  height: clamp(48px, 10vh, 110px);
+  width: auto;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: transparent;
+}
+
+/* Top-right "Archive" button — links to the legacy ring layout. */
+.has-figure .archive-link {
+  position: fixed;
+  top: clamp(1.25rem, 3vh, 2.25rem);
+  right: clamp(1.25rem, 3vw, 2.25rem);
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: clamp(0.7rem, 1.1vw, 0.85rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  padding: 0.45rem 0.95rem;
+  border: 1px solid var(--ink);
+  background: transparent;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.has-figure .archive-link:hover,
+.has-figure .archive-link:focus-visible {
+  background: var(--ink);
+  color: var(--canvas);
+  outline: none;
+}
+
+.figure-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 75vh;
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.figure-overlay img {
+  display: block;
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+}
+
+/* On narrow/portrait screens, the natural image is taller-than-wide
+   when scaled to fit width; switch to width-bound scaling so the
+   figure shrinks vertically while staying as large as possible. */
+@media (max-aspect-ratio: 1/1) {
+  .figure-overlay img {
+    width: 100%;
+    height: auto;
+    max-height: 75vh;
+  }
+}
+
+/* Title is fixed to the viewport, hovering just above the robot's head.
+   `top: auto` clears the base .ref-ring__hub rule's top: 50%. */
+/* Title sits within the hero (top of the page) and scrolls away with the
+   page like the robot. Anchored from the top so it stays in a consistent
+   spot just above the robot's head regardless of viewport height. */
+.has-figure .ref-ring__hub {
+  position: absolute;
+  left: 50%;
+  top: clamp(20vh, 24vh, 28vh);
+  bottom: auto;
+  transform: translateX(-50%);
+  z-index: 30;
+  width: min(94vw, 60rem);
+  text-align: center;
+}
+
+.has-figure .ref-ring__headline {
+  font-family: var(--display);
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  font-size: clamp(0.95rem, 1.7vw, 1.3rem);
+  line-height: 1.25;
+}
+
+/* ---------- Editorial: dense two-column block flanking the robot --------- */
+
+/* The page is a scrollable wall of magazine-style copy. CSS columns split it
+   into two columns with a wide column-gap; the fixed robot video sits in
+   that gap so the text reads as flowing on the left and right of the figure.
+   Top padding leaves room for the logo, archive button, and headline. */
+/* Editorial container: plain block flow holding two children — a 2-column
+   split that flanks the robot, then a full-width single-column section
+   that runs underneath it. */
+.has-figure .editorial {
+  display: block;
+  min-height: auto;
+  /* Top padding sits the editorial low enough that the title + robot own
+     the upper portion of the hero, while still letting the first photo
+     in each column peek above the fold. */
+  padding: clamp(28rem, 62vh, 42rem) clamp(1.25rem, 3vw, 3rem)
+    clamp(3rem, 8vh, 6rem);
+  margin: 0;
+
+  font-family: var(--display);
+  font-size: clamp(1.1rem, 1.55vw, 1.5rem);
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}
+
+/* The two-column split that flanks the robot. The center grid track is
+   reserved space for the absolutely-positioned video — no copy crosses
+   into it. */
+.has-figure .editorial__split {
+  display: grid;
+  grid-template-columns: 1fr clamp(34vw, 40vw, 46vw) 1fr;
+  column-gap: clamp(1.25rem, 2.5vw, 2.5rem);
+  align-items: start;
+}
+
+/* Full-width single-column section that runs UNDERNEATH the robot. */
+.has-figure .editorial__full {
+  margin: clamp(2rem, 5vh, 4rem) auto 0;
+  max-width: min(72ch, 92vw);
+  text-align: justify;
+  hyphens: auto;
+}
+
+.has-figure .editorial__full p {
+  margin: 0 0 0.7rem;
+}
+
+.has-figure .editorial__col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.has-figure .editorial__col--left {
+  grid-column: 1;
+}
+
+.has-figure .editorial__col--right {
+  grid-column: 3;
+}
+
+.has-figure .editorial p {
+  margin: 0;
+  text-align: justify;
+  hyphens: auto;
+  orphans: 2;
+  widows: 2;
+}
+
+/* The questions feel like a poetic provocation at the top of the column —
+   italic for voice, but matched to the body copy in size. */
+.has-figure .editorial__question {
+  font-style: italic;
+  text-align: left;
+  hyphens: manual;
+}
+
+/* The lede statement is the manifesto line — uppercase so it anchors the
+   reader after the questions, but matched to the body copy in size. */
+.has-figure .editorial__lede {
+  font-style: normal;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  margin-top: 0.6em;
+  hyphens: manual;
+}
+
+/* Embedded photos float within their column so the body text wraps tightly
+   around them — magazine style. The two columns mirror each other: the
+   left column leads with a left-floating photo, the right column leads
+   with a right-floating photo. Each column then alternates from there. */
+.has-figure .editorial__photo {
+  width: clamp(55%, 60%, 70%);
+  shape-outside: margin-box;
+}
+
+.has-figure .editorial__col--left .editorial__photo {
+  float: left;
+  margin: 0.35em 0.9em 0.55em 0;
+}
+
+.has-figure .editorial__col--left .editorial__photo:nth-of-type(even) {
+  float: right;
+  margin: 0.35em 0 0.55em 0.9em;
+}
+
+.has-figure .editorial__col--right .editorial__photo {
+  float: right;
+  margin: 0.35em 0 0.55em 0.9em;
+}
+
+.has-figure .editorial__col--right .editorial__photo:nth-of-type(even) {
+  float: left;
+  margin: 0.35em 0.9em 0.55em 0;
+}
+
+.has-figure .editorial__photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+/* Flex columns can't host floats, so let the columns lay out as plain
+   block flow which is what enables float + text-wrap to work. */
+.has-figure .editorial__col {
+  display: block;
+}
+
+.has-figure .editorial__col > p {
+  margin: 0 0 0.55rem;
+}
+
+/* On narrower screens collapse the split to a single column and let the
+   robot sit above all the copy. */
+@media (max-width: 960px) {
+  .has-figure .editorial {
+    padding-top: clamp(82vh, 88vh, 92vh);
+    padding-left: clamp(1.25rem, 5vw, 2rem);
+    padding-right: clamp(1.25rem, 5vw, 2rem);
+    font-size: clamp(1rem, 2.6vw, 1.2rem);
+    line-height: 1.35;
+  }
+
+  .has-figure .editorial__split {
+    grid-template-columns: 1fr;
+    column-gap: 0;
+  }
+
+  .has-figure .editorial__col--left,
+  .has-figure .editorial__col--right {
+    grid-column: 1;
+  }
+}
+
+/* With only 4 cells (one per approved image), the default cell width
+   (~10.8% of ring) reads too sparse — bump cells up so they fill the
+   orbit visually like prominent thumbnails at each quadrant. */
+.has-figure .ref-ring__cell {
+  width: calc(var(--ring) * 0.22);
+}
+
+@media (max-width: 540px) {
+  .has-figure .ref-ring__cell {
+    width: calc(var(--ring) * 0.24);
+  }
+}
+
+/* ——— Static cluster behind the figure ———
+   Stop the orbit rotation and position the four cells as a horizontal
+   group right at the figure's head/shoulder level. The cells already
+   live in .ref-ring's isolated stacking context which sits below the
+   figure-overlay (z-index 10), so they naturally tuck behind her.
+*/
+/*
+  Parallax: as the user scrolls down, the orbit container (containing
+  all the arc cells) translates upward in addition to natural scroll —
+  so the carousel "flies away" upward faster than the robot, which
+  scrolls 1:1 with the page. The arc animation on each cell continues
+  unchanged inside this translating wrapper (transforms compose).
+
+  Uses scroll-driven CSS animations: Chrome 115+, Edge 115+, Firefox
+  132+, Safari 26+. On older browsers the rule degrades to no parallax
+  (cells scroll 1:1, no breakage).
+*/
+.has-figure .ref-ring__orbit {
+  animation: orbit-parallax linear both;
+  animation-timeline: scroll(root block);
+}
+
+@keyframes orbit-parallax {
+  to { transform: translateY(-22vh); }
+}
+
+/* Replace the polar (orbit) positioning with a simple horizontal
+   cluster. Each cell gets its own --tx / --ty / --tilt set per
+   nth-child below for a slightly fanned, organic placement. */
+.has-figure .ref-ring__cell {
+  --tx: 0px;
+  --ty: 0px;
+  --tilt: 0deg;
+  transform: translate(-50%, -50%)
+    translate(var(--tx), var(--ty))
+    rotate(var(--tilt));
+  width: calc(var(--ring) * 0.2);
+}
+
+/*
+  Continuous horseshoe arc — cells sweep along a wide upside-down U
+  passing over the figure's head. Each cell starts off-screen at one
+  end of the arc, fades in, traverses over the head, fades out at the
+  other end, and loops back. Four cells are staggered with negative
+  animation-delays so they're at different points on the arc at any
+  given moment.
+
+      ─────── ∩ ───────
+     ╱                   ╲
+    fade-in            fade-out
+    (left edge)       (right edge)
+*/
+.has-figure .ref-ring__cell {
+  animation: cell-arc 18s linear infinite;
+}
+
+/* 4 cells spaced evenly around the 18s cycle = 4.5s offset each, so at
+   any moment one cell is fading-in / one is fading-out / two are
+   mid-arc. */
+.has-figure .ref-ring__cell:nth-child(1) { animation-delay:    0s;   }  /*   0% */
+.has-figure .ref-ring__cell:nth-child(2) { animation-delay:   -4.5s; }  /*  25% */
+.has-figure .ref-ring__cell:nth-child(3) { animation-delay:   -9s;   }  /*  50% */
+.has-figure .ref-ring__cell:nth-child(4) { animation-delay:  -13.5s; }  /*  75% */
+
+/* Static fallback positions per cell — only visible when the animation
+   is paused (prefers-reduced-motion). Spread as a shallow horseshoe
+   so the page still reads correctly without motion. */
+.has-figure .ref-ring__cell:nth-child(1) { --tx: -22vmin; --ty:  4vh; --tilt: -7deg; }
+.has-figure .ref-ring__cell:nth-child(2) { --tx:  -8vmin; --ty: -3vh; --tilt: -2deg; }
+.has-figure .ref-ring__cell:nth-child(3) { --tx:   8vmin; --ty: -3vh; --tilt:  2deg; }
+.has-figure .ref-ring__cell:nth-child(4) { --tx:  22vmin; --ty:  4vh; --tilt:  7deg; }
+
+@keyframes cell-arc {
+  /* Path: x(t) = -20vw·cos(π·t),  y(t) = 0vh − 8vh·sin(π·t)
+     Compact horseshoe constrained to 40vw total width (±20vw). The
+     arc is lifted so the bases sit just above her head (y=0, body
+     y≈50vh) and the peak (y=-8vh) floats well above her forehead.
+     Cells fade in 0–8% and out 92–100%. */
+  0%   { transform: translate(-50%,-50%) translate(-20vw,    0vh)   rotate(-5deg);    opacity: 0; }
+  8%   {                                                                              opacity: 1; }
+  10%  { transform: translate(-50%,-50%) translate(-19vw,   -2.5vh) rotate(-4deg);   }
+  20%  { transform: translate(-50%,-50%) translate(-16.2vw, -4.7vh) rotate(-3deg);   }
+  30%  { transform: translate(-50%,-50%) translate(-11.8vw, -6.5vh) rotate(-2deg);   }
+  40%  { transform: translate(-50%,-50%) translate( -6.2vw, -7.6vh) rotate(-1deg);   }
+  50%  { transform: translate(-50%,-50%) translate(   0vw,  -8vh)   rotate(0deg);    }
+  60%  { transform: translate(-50%,-50%) translate(  6.2vw, -7.6vh) rotate(1deg);    }
+  70%  { transform: translate(-50%,-50%) translate( 11.8vw, -6.5vh) rotate(2deg);    }
+  80%  { transform: translate(-50%,-50%) translate( 16.2vw, -4.7vh) rotate(3deg);    }
+  90%  { transform: translate(-50%,-50%) translate(  19vw,  -2.5vh) rotate(4deg);    }
+  92%  {                                                                              opacity: 1; }
+  100% { transform: translate(-50%,-50%) translate(  20vw,   0vh)   rotate(5deg);     opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .has-figure .ref-ring__cell,
+  .has-figure .ref-ring__orbit {
+    animation: none;
+  }
+}
+
+@media (max-width: 540px) {
+  .has-figure .ref-ring__cell {
+    width: calc(var(--ring) * 0.24);
+  }
+}
+
 @media (max-width: 540px) {
   .ref-ring {
     --ring: min(92vmin, calc(100vw - 1.25rem));
@@ -260,3 +712,4 @@ body {
     animation: none;
   }
 }
+
