@@ -161,6 +161,12 @@ const fitManifestoCopy = (() => {
     grabbed: false,
     grabDx: 0, // pointer offset within the ghost on grab (in venn coords)
     grabDy: 0,
+    // Once a ghost is dropped after a drag (or simply tapped), it gets
+    // pinned in place — the physics loop skips its integration entirely
+    // until the next page refresh, when it returns to its initial
+    // random position and resumes drifting. Re-grabbing a pinned ghost
+    // unpins it so the user can reposition it again.
+    pinned: false,
     // Stable across resizes: each ghost has a fractional size (% of
     // venn width) and a fixed aspect ratio. The actual pixel size is
     // recomputed in applySizes() whenever the venn box changes.
@@ -238,9 +244,13 @@ const fitManifestoCopy = (() => {
       const px = e.clientX - r.left;
       const py = e.clientY - r.top;
       state[i].grabbed = true;
+      // Re-grabbing a pinned ghost releases the pin so the user
+      // can reposition it. Pin will be re-applied on pointerup.
+      state[i].pinned = false;
       state[i].grabDx = px - state[i].x;
       state[i].grabDy = py - state[i].y;
       ghost.classList.add("is-grabbed");
+      ghost.classList.remove("is-pinned");
       try {
         ghost.setPointerCapture(e.pointerId);
       } catch {
@@ -269,13 +279,15 @@ const fitManifestoCopy = (() => {
     const onUp = (e) => {
       if (!state[i].grabbed) return;
       state[i].grabbed = false;
+      // Pin the ghost where the user dropped it. The physics loop
+      // skips pinned ghosts entirely, so it stays put until the page
+      // is refreshed (or the user grabs it again to reposition).
+      state[i].pinned = true;
       ghost.classList.remove("is-grabbed");
-      // Re-randomize velocity so the ghost drifts away from its new
-      // home in a fresh direction (rather than continuing whatever
-      // pre-grab trajectory it had).
-      const v = randomVelocity();
-      state[i].vx = v.vx;
-      state[i].vy = v.vy;
+      ghost.classList.add("is-pinned");
+      // Lock rotation at 0 so a pinned ghost reads as static rather
+      // than still mid-sway from its last drift cycle.
+      applyTransform(i, 0);
       try {
         ghost.releasePointerCapture(e.pointerId);
       } catch {
@@ -309,6 +321,9 @@ const fitManifestoCopy = (() => {
       const h = ghost.offsetHeight;
       state[i].x = Math.max(0, Math.min(bounds.width - w, state[i].x));
       state[i].y = Math.max(0, Math.min(bounds.height - h, state[i].y));
+      // Pinned ghosts skip the physics tick, so re-apply their
+      // transform here or the clamped x/y wouldn't reach the DOM.
+      if (state[i].pinned) applyTransform(i, 0);
     }
   };
   window.addEventListener("resize", onResize);
@@ -328,9 +343,10 @@ const fitManifestoCopy = (() => {
       const s = state[i];
       const ghost = ghosts[i];
 
-      // Skip physics for grabbed ghosts — pointermove is driving the
-      // transform directly.
-      if (s.grabbed) continue;
+      // Skip physics for grabbed ghosts (pointermove is driving the
+      // transform directly) and for pinned ghosts (user dropped them
+      // here and they stay until refresh / re-grab).
+      if (s.grabbed || s.pinned) continue;
 
       const w = ghost.offsetWidth;
       const h = ghost.offsetHeight;
