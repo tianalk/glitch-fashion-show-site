@@ -144,6 +144,13 @@ const fitManifestoCopy = (() => {
   // still produce sensible-looking clips.
   const SIZE_MIN_PX = 40;
   const SIZE_MAX_PX = 280;
+  // On phones the ghost clips read a touch small relative to the
+  // Venn circles (which themselves get a 2% bump in styles.css's
+  // max-width: 640px block). Boost clip size 5% to compensate.
+  // Tied to the same 640px breakpoint so the two adjustments stay
+  // in lock-step.
+  const MOBILE_BREAKPOINT_PX = 640;
+  const MOBILE_GHOST_BOOST = 1.05;
 
   let speedMin = REF_SPEED_MIN;
   let speedMax = REF_SPEED_MAX;
@@ -187,10 +194,21 @@ const fitManifestoCopy = (() => {
 
   function applySizes() {
     const r = venn.getBoundingClientRect();
+    const boost =
+      window.innerWidth <= MOBILE_BREAKPOINT_PX ? MOBILE_GHOST_BOOST : 1;
     ghosts.forEach((ghost, i) => {
+      // Per-image size override declared in the markup via
+      // `data-size-boost="1.2"` (etc). Stacks with the mobile boost
+      // so a tagged image grows proportionally on both viewports.
+      // Defaults to 1 when the attribute is missing or unparseable.
+      const perImageBoost =
+        Number.parseFloat(ghost.dataset.sizeBoost || "1") || 1;
       const sizePx = Math.max(
         SIZE_MIN_PX,
-        Math.min(SIZE_MAX_PX, r.width * state[i].sizeFrac)
+        Math.min(
+          SIZE_MAX_PX,
+          r.width * state[i].sizeFrac * boost * perImageBoost
+        )
       );
       ghost.style.setProperty("--ghost-w", `${sizePx.toFixed(0)}px`);
       ghost.style.setProperty("--ghost-aspect", state[i].aspect.toFixed(2));

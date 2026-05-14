@@ -1302,9 +1302,27 @@ body {
 
 @media (max-width: 640px) {
   .has-manifesto .venn {
-    --venn-d: 58vw;
+    /* Diameter is bumped ~2% on mobile (58vw -> 59.16vw) so the
+       diagram reads slightly larger on phones without overflowing the
+       padded venn section. Paired with a 5% ghost-clip boost in
+       manifesto.js (see MOBILE_GHOST_BOOST). */
+    --venn-d: calc(58vw * 1.02);
     --venn-overlap: 0.4;
     --venn-label-fs: clamp(1.6rem, 7vw, 3rem);
+  }
+
+  /* On phones the two labels sit very close together because the
+     circles overlap by 40% of their diameter. Pad the INNER edge of
+     each label so the centered text gets pushed outward, opening up
+     breathing room between "FEAR" and "UTOPIA". The flex container's
+     `justify-content: center` re-evaluates against the reduced
+     content width, so padding-right on the left label nudges its
+     text leftward, and vice versa. */
+  .has-manifesto .venn__label--left {
+    padding-right: 18%;
+  }
+  .has-manifesto .venn__label--right {
+    padding-left: 18%;
   }
 }
 
