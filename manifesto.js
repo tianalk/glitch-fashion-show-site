@@ -142,8 +142,8 @@ const fitManifestoCopy = (() => {
   const REF_SPEED_MAX = 130;
   // Hard size floor / ceiling so really tiny / really huge viewports
   // still produce sensible-looking clips.
-  const SIZE_MIN_PX = 40;
-  const SIZE_MAX_PX = 280;
+  const SIZE_MIN_PX = 48;
+  const SIZE_MAX_PX = 320;
   // On phones the ghost clips read a touch small relative to the
   // Venn circles (which themselves get a 2% bump in styles.css's
   // max-width: 640px block). Boost clip size 5% to compensate.
@@ -178,7 +178,9 @@ const fitManifestoCopy = (() => {
     // Stable across resizes: each ghost has a fractional size (% of
     // venn width) and a fixed aspect ratio. The actual pixel size is
     // recomputed in applySizes() whenever the venn box changes.
-    sizeFrac: 0.14 + Math.random() * 0.08, // 14–22% of venn width
+    // 18–25% makes every clip larger, with the old smallest clips
+    // receiving the strongest proportional increase.
+    sizeFrac: 0.18 + Math.random() * 0.07,
     aspect: 0.6 + Math.random() * 0.6, // 0.6–1.2
   }));
 
