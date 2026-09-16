@@ -1365,7 +1365,7 @@ body {
   grid-column: 1 / -1;
 }
 
-.has-manifesto .manifesto-purpose__membership a {
+.has-manifesto .manifesto-purpose__copy a {
   color: inherit;
   text-decoration-thickness: 0.12em;
   text-underline-offset: 0.15em;
