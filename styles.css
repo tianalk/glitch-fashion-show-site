@@ -1326,6 +1326,57 @@ body {
   }
 }
 
+/* Purpose statement at the end of the manifesto. */
+.has-manifesto .manifesto-purpose {
+  margin: 0 calc(-1 * clamp(1.5rem, 4vw, 4rem));
+  padding: clamp(3rem, 8vw, 8rem) clamp(1.5rem, 4vw, 4rem)
+    clamp(4rem, 10vw, 10rem);
+  border-top: 1px solid currentColor;
+  background: var(--manifesto-bg);
+}
+
+.has-manifesto .manifesto-purpose__title {
+  margin: 0 0 clamp(2rem, 5vw, 5rem);
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: clamp(3rem, 10vw, 9rem);
+  font-weight: 900;
+  line-height: 0.85;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+}
+
+.has-manifesto .manifesto-purpose__copy {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(2rem, 5vw, 6rem);
+  max-width: 100rem;
+  margin-left: auto;
+}
+
+.has-manifesto .manifesto-purpose__copy p {
+  margin: 0;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: clamp(1rem, 1.4vw, 1.35rem);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.has-manifesto .manifesto-purpose__membership {
+  grid-column: 1 / -1;
+}
+
+.has-manifesto .manifesto-purpose__membership a {
+  color: inherit;
+  text-decoration-thickness: 0.12em;
+  text-underline-offset: 0.15em;
+}
+
+@media (max-width: 720px) {
+  .has-manifesto .manifesto-purpose__copy {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Ghost clips drifting between fear and utopia.
    Each image is positioned absolutely inside the venn box and rendered
    at full opacity. Motion is fully JS-driven — see the ghost physics
