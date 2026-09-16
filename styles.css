@@ -1388,8 +1388,8 @@ body {
    The clips are also touch/mouse-draggable: pointer-events: auto and
    touch-action: none on each <img> let the user grab a clip and slide
    it to a new spot. While grabbed the physics integration pauses; on
-   release the ghost holds its new position for a longer beat before
-   flashing and resuming in a fresh random direction. */
+   release the ghost flashes, holds its new position for a longer beat,
+   and then resumes in a fresh random direction. */
 .has-manifesto .venn__ghosts {
   position: absolute;
   inset: 0;

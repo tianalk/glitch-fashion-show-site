@@ -119,10 +119,10 @@ const fitManifestoCopy = (() => {
 // Drag: each <img> has pointer-events: auto + touch-action: none. On
 // pointerdown we mark the ghost as `grabbed` and remember the cursor's
 // offset within the ghost. On pointermove we slide the ghost so that
-// offset stays under the cursor. On pointerup the ghost stays pinned
-// for a longer beat, then flashes and resumes in a fresh random
-// direction. While `grabbed`, the physics tick skips the integrate /
-// bounce / nudge steps for that ghost.
+// offset stays under the cursor. On pointerup the ghost flashes, stays
+// pinned for a longer beat, then resumes in a fresh random direction.
+// While `grabbed`, the physics tick skips the integrate / bounce /
+// nudge steps for that ghost.
 (() => {
   const ghosts = Array.from(document.querySelectorAll(".venn__ghost"));
   if (!ghosts.length) return;
@@ -156,7 +156,7 @@ const fitManifestoCopy = (() => {
   let speedMax = REF_SPEED_MAX;
 
   // Per-ghost mutable state.
-  const state = ghosts.map((_, i) => ({
+  const state = ghosts.map(() => ({
     x: 0,
     y: 0,
     vx: 0,
@@ -168,12 +168,12 @@ const fitManifestoCopy = (() => {
     grabbed: false,
     grabDx: 0, // pointer offset within the ghost on grab (in venn coords)
     grabDy: 0,
-    // Every other ghost occasionally pauses and flashes on its own.
-    autoPauses: i % 2 === 0,
+    // Every ghost occasionally pauses and flashes on its own.
+    autoPauses: true,
     nextPause: Infinity,
     pauseUntil: 0,
     // User-placed ghosts remain pinned longer than automatic pauses,
-    // then flash and resume instead of staying frozen forever.
+    // then resume instead of staying frozen forever.
     pinned: false,
     // Stable across resizes: each ghost has a fractional size (% of
     // venn width) and a fixed aspect ratio. The actual pixel size is
@@ -314,12 +314,13 @@ const fitManifestoCopy = (() => {
       if (!state[i].grabbed) return;
       state[i].grabbed = false;
       // User placement gets a much longer static hold than an automatic
-      // pause, but eventually flashes and returns to motion.
+      // pause, but eventually returns to motion.
       state[i].pinned = true;
-      state[i].pauseUntil = performance.now() + 10000 + Math.random() * 8000;
+      state[i].pauseUntil = performance.now() + 25000 + Math.random() * 13000;
       state[i].nextPause = Infinity;
       ghost.classList.remove("is-grabbed");
       ghost.classList.add("is-pinned");
+      startFlash(i);
       // Lock rotation at 0 so a pinned ghost reads as static rather
       // than still mid-sway from its last drift cycle.
       applyTransform(i, 0);
@@ -381,18 +382,20 @@ const fitManifestoCopy = (() => {
       // Pointermove drives grabbed ghosts directly.
       if (s.grabbed) continue;
 
-      // A user-placed ghost remains still for 10–18 seconds. At the end
-      // of that hold it flashes in place before returning to motion.
+      // A user-placed ghost remains still for 25–38 seconds before
+      // returning to motion.
       if (s.pinned) {
         if (t < s.pauseUntil) continue;
         s.pinned = false;
-        ghost.classList.remove("is-pinned");
-        startFlash(i);
-        s.pauseUntil = t + 700;
-        continue;
+        s.pauseUntil = 0;
+        ghost.classList.remove("is-pinned", "is-flashing");
+        const v = randomVelocity();
+        s.vx = v.vx;
+        s.vy = v.vy;
+        scheduleNextPause(s, t);
       }
 
-      // Automatic and post-placement flashes freeze the image briefly.
+      // Automatic flashes freeze the image for their full hold.
       if (s.pauseUntil) {
         if (t < s.pauseUntil) continue;
         s.pauseUntil = 0;
@@ -403,10 +406,11 @@ const fitManifestoCopy = (() => {
         scheduleNextPause(s, t);
       }
 
-      // Roughly half the images occasionally stop, flash, and continue.
+      // Every image occasionally stops and flashes, then holds its
+      // position for 10–18 seconds before continuing.
       if (t > s.nextPause) {
         startFlash(i);
-        s.pauseUntil = t + 700;
+        s.pauseUntil = t + 10000 + Math.random() * 8000;
         s.nextPause = Infinity;
         continue;
       }
