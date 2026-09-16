@@ -119,10 +119,10 @@ const fitManifestoCopy = (() => {
 // Drag: each <img> has pointer-events: auto + touch-action: none. On
 // pointerdown we mark the ghost as `grabbed` and remember the cursor's
 // offset within the ghost. On pointermove we slide the ghost so that
-// offset stays under the cursor. On pointerup we release and reset
-// the velocity to a fresh random direction so the ghost drifts away
-// from its new spot. While `grabbed`, the physics tick skips the
-// integrate / bounce / nudge steps for that ghost.
+// offset stays under the cursor. On pointerup the ghost stays pinned
+// for a longer beat, then flashes and resumes in a fresh random
+// direction. While `grabbed`, the physics tick skips the integrate /
+// bounce / nudge steps for that ghost.
 (() => {
   const ghosts = Array.from(document.querySelectorAll(".venn__ghost"));
   if (!ghosts.length) return;
@@ -156,7 +156,7 @@ const fitManifestoCopy = (() => {
   let speedMax = REF_SPEED_MAX;
 
   // Per-ghost mutable state.
-  const state = ghosts.map(() => ({
+  const state = ghosts.map((_, i) => ({
     x: 0,
     y: 0,
     vx: 0,
@@ -168,11 +168,12 @@ const fitManifestoCopy = (() => {
     grabbed: false,
     grabDx: 0, // pointer offset within the ghost on grab (in venn coords)
     grabDy: 0,
-    // Once a ghost is dropped after a drag (or simply tapped), it gets
-    // pinned in place — the physics loop skips its integration entirely
-    // until the next page refresh, when it returns to its initial
-    // random position and resumes drifting. Re-grabbing a pinned ghost
-    // unpins it so the user can reposition it again.
+    // Every other ghost occasionally pauses and flashes on its own.
+    autoPauses: i % 2 === 0,
+    nextPause: Infinity,
+    pauseUntil: 0,
+    // User-placed ghosts remain pinned longer than automatic pauses,
+    // then flash and resume instead of staying frozen forever.
     pinned: false,
     // Stable across resizes: each ghost has a fractional size (% of
     // venn width) and a fixed aspect ratio. The actual pixel size is
@@ -190,6 +191,19 @@ const fitManifestoCopy = (() => {
     const speed = speedMin + Math.random() * (speedMax - speedMin);
     const angle = Math.random() * Math.PI * 2;
     return { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed };
+  }
+
+  function scheduleNextPause(s, now) {
+    s.nextPause = s.autoPauses
+      ? now + 9000 + Math.random() * 15000
+      : Infinity;
+  }
+
+  function startFlash(i) {
+    ghosts[i].classList.remove("is-flashing");
+    // Force a reflow so a recently completed flash can restart.
+    void ghosts[i].offsetWidth;
+    ghosts[i].classList.add("is-flashing");
   }
 
   function applySizes() {
@@ -232,6 +246,7 @@ const fitManifestoCopy = (() => {
       state[i].vy = v.vy;
       state[i].nextNudge =
         performance.now() + 1800 + Math.random() * 4500;
+      scheduleNextPause(state[i], performance.now() - Math.random() * 5000);
     });
   }
 
@@ -265,10 +280,11 @@ const fitManifestoCopy = (() => {
       // Re-grabbing a pinned ghost releases the pin so the user
       // can reposition it. Pin will be re-applied on pointerup.
       state[i].pinned = false;
+      state[i].pauseUntil = 0;
       state[i].grabDx = px - state[i].x;
       state[i].grabDy = py - state[i].y;
       ghost.classList.add("is-grabbed");
-      ghost.classList.remove("is-pinned");
+      ghost.classList.remove("is-pinned", "is-flashing");
       try {
         ghost.setPointerCapture(e.pointerId);
       } catch {
@@ -297,10 +313,11 @@ const fitManifestoCopy = (() => {
     const onUp = (e) => {
       if (!state[i].grabbed) return;
       state[i].grabbed = false;
-      // Pin the ghost where the user dropped it. The physics loop
-      // skips pinned ghosts entirely, so it stays put until the page
-      // is refreshed (or the user grabs it again to reposition).
+      // User placement gets a much longer static hold than an automatic
+      // pause, but eventually flashes and returns to motion.
       state[i].pinned = true;
+      state[i].pauseUntil = performance.now() + 10000 + Math.random() * 8000;
+      state[i].nextPause = Infinity;
       ghost.classList.remove("is-grabbed");
       ghost.classList.add("is-pinned");
       // Lock rotation at 0 so a pinned ghost reads as static rather
@@ -361,10 +378,38 @@ const fitManifestoCopy = (() => {
       const s = state[i];
       const ghost = ghosts[i];
 
-      // Skip physics for grabbed ghosts (pointermove is driving the
-      // transform directly) and for pinned ghosts (user dropped them
-      // here and they stay until refresh / re-grab).
-      if (s.grabbed || s.pinned) continue;
+      // Pointermove drives grabbed ghosts directly.
+      if (s.grabbed) continue;
+
+      // A user-placed ghost remains still for 10–18 seconds. At the end
+      // of that hold it flashes in place before returning to motion.
+      if (s.pinned) {
+        if (t < s.pauseUntil) continue;
+        s.pinned = false;
+        ghost.classList.remove("is-pinned");
+        startFlash(i);
+        s.pauseUntil = t + 700;
+        continue;
+      }
+
+      // Automatic and post-placement flashes freeze the image briefly.
+      if (s.pauseUntil) {
+        if (t < s.pauseUntil) continue;
+        s.pauseUntil = 0;
+        ghost.classList.remove("is-flashing");
+        const v = randomVelocity();
+        s.vx = v.vx;
+        s.vy = v.vy;
+        scheduleNextPause(s, t);
+      }
+
+      // Roughly half the images occasionally stop, flash, and continue.
+      if (t > s.nextPause) {
+        startFlash(i);
+        s.pauseUntil = t + 700;
+        s.nextPause = Infinity;
+        continue;
+      }
 
       const w = ghost.offsetWidth;
       const h = ghost.offsetHeight;

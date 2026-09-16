@@ -1387,9 +1387,9 @@ body {
    vector for the "switches direction randomly" feel.
    The clips are also touch/mouse-draggable: pointer-events: auto and
    touch-action: none on each <img> let the user grab a clip and slide
-   it to a new spot. While grabbed the physics integration for that
-   ghost is paused; on release it resumes drifting from its new home
-   in a fresh random direction. */
+   it to a new spot. While grabbed the physics integration pauses; on
+   release the ghost holds its new position for a longer beat before
+   flashing and resuming in a fresh random direction. */
 .has-manifesto .venn__ghosts {
   position: absolute;
   inset: 0;
@@ -1430,6 +1430,23 @@ body {
   z-index: 1;
 }
 
+.has-manifesto .venn__ghost.is-flashing {
+  animation: ghost-flash 0.7s steps(8, end);
+}
+
+@keyframes ghost-flash {
+  0%,
+  100% {
+    filter: none;
+    opacity: 1;
+  }
+  45%,
+  70% {
+    filter: blur(7px) contrast(8) saturate(2.5) hue-rotate(8deg);
+    opacity: 0.35;
+  }
+}
+
 /* Once a clip has been dropped (pinned), hovering it triggers a
    pixelate-and-disappear glitch — the same vocabulary as the manifesto
    headline's inline chips, so the page feels coherent. We use
@@ -1462,5 +1479,11 @@ body {
   transition:
     filter 0.4s steps(8, end) 0.2s,
     opacity 0.4s steps(8, end) 0.2s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .has-manifesto .venn__ghost.is-flashing {
+    animation: none;
+  }
 }
 
