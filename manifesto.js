@@ -246,7 +246,8 @@ const fitManifestoCopy = (() => {
       state[i].vy = v.vy;
       state[i].nextNudge =
         performance.now() + 1800 + Math.random() * 4500;
-      scheduleNextPause(state[i], performance.now() - Math.random() * 5000);
+      state[i].nextPause =
+        performance.now() + 1000 + Math.random() * 19000;
     });
   }
 
