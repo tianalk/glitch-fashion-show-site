@@ -712,7 +712,7 @@ body {
 }
 
 /* ============================================================
-   MANIFESTO — magazine-spread layout for /manifesto.html
+   MANIFESTO — magazine-spread homepage layout
    Big bold headline-style sentence with the four approved images
    dropped INLINE between words, sized to the cap-height of the
    surrounding text. Inspired by editorial spreads like Apostrophe
@@ -1167,6 +1167,11 @@ body {
   letter-spacing: 0.16em;
 }
 
+.has-manifesto .manifesto__rail-meta a {
+  color: inherit;
+  text-underline-offset: 0.2em;
+}
+
 /* On narrow screens make the robot a smaller corner accent so it doesn't
    dominate the spread. */
 @media (max-width: 720px) {
@@ -1362,7 +1367,11 @@ body {
 }
 
 .has-manifesto .manifesto-purpose__membership {
-  grid-column: 1 / -1;
+  grid-column: 1;
+}
+
+.has-manifesto .manifesto-purpose__social {
+  grid-column: 2;
 }
 
 .has-manifesto .manifesto-purpose__copy a {
@@ -1374,6 +1383,11 @@ body {
 @media (max-width: 720px) {
   .has-manifesto .manifesto-purpose__copy {
     grid-template-columns: 1fr;
+  }
+
+  .has-manifesto .manifesto-purpose__membership,
+  .has-manifesto .manifesto-purpose__social {
+    grid-column: 1;
   }
 }
 
