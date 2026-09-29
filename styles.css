@@ -773,13 +773,6 @@ body {
   transform: translateY(-1px);
 }
 
-/* The pixel logo is itself pink, which disappears against the pink
-   manifesto background. Hide it on this page — the GL/TCH wordmark in
-   the body copy already does the branding work. */
-.has-manifesto .glitch-logo {
-  display: none;
-}
-
 /* Flex column layout: the manifesto container fills at least one
    viewport. The spread holds the headline and is sized to fill
    100vh minus the rail's height, so the rail sits flush at the
