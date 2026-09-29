@@ -765,3 +765,67 @@ const fitManifestoCopy = (() => {
 
   loop();
 })();
+
+// Giant slash glitch. Same model as the headline letters: --glitch is
+// max(cursor proximity, ambient noise), and random seeds pick the jitter
+// direction. Seeds re-roll on each ambient burst and whenever the cursor
+// re-enters the field so the single glyph doesn't repeat one pose.
+// Click the slash to freeze the current frame (for screenshots); click
+// again to release.
+(() => {
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce) return;
+
+  const slash = document.querySelector(".slash");
+  const glyph = slash && slash.querySelector(".slash__base");
+  if (!glyph) return;
+
+  function reseed() {
+    glyph.style.setProperty("--glitch-dx", (Math.random() * 2 - 1).toFixed(2));
+    glyph.style.setProperty("--glitch-dy", (Math.random() * 2 - 1).toFixed(2));
+    glyph.style.setProperty("--glitch-dr", (Math.random() * 2 - 1).toFixed(2));
+  }
+  reseed();
+
+  let frozen = false;
+  let inField = false;
+
+  function set(name, value) {
+    if (!frozen) glyph.style.setProperty(name, value);
+  }
+
+  window.addEventListener(
+    "pointermove",
+    (e) => {
+      const r = slash.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const field = Math.max(r.width, r.height) * 0.4;
+      const d = Math.hypot(e.clientX - cx, e.clientY - cy);
+      const g = d < field ? 1 - d / field : 0;
+      if (g > 0 && !inField && !frozen) reseed();
+      inField = g > 0;
+      set("--cursor-glitch", g.toFixed(3));
+    },
+    { passive: true },
+  );
+
+  document.addEventListener("pointerleave", () => {
+    inField = false;
+    set("--cursor-glitch", "0");
+  });
+
+  slash.addEventListener("click", () => {
+    frozen = !frozen;
+  });
+
+  function ambient() {
+    if (!frozen) {
+      reseed();
+      set("--noise-glitch", (0.4 + Math.random() * 0.4).toFixed(3));
+      setTimeout(() => set("--noise-glitch", "0"), 50 + Math.random() * 150);
+    }
+    setTimeout(ambient, 2500 + Math.random() * 3500);
+  }
+  ambient();
+})();
