@@ -1391,6 +1391,71 @@ body {
   }
 }
 
+/* Giant slash at the foot of the page — logo source material.
+   Same blur/contrast pump and chromatic text-shadow as .manifesto__letter,
+   with offsets in em so they scale with the glyph. No jitter transform,
+   and unlike the letters opacity never drops: the slash stays put and
+   solid however hard it glitches. */
+.has-manifesto .manifesto-slash {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 calc(-1 * clamp(1.5rem, 4vw, 4rem));
+  padding: clamp(2rem, 6vw, 6rem) 0;
+  border-top: 1px solid currentColor;
+  background: var(--manifesto-bg);
+  overflow: hidden;
+}
+
+.has-manifesto .slash {
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 900;
+  font-size: min(95vh, 90vw);
+  line-height: 0.9;
+  cursor: crosshair;
+  user-select: none;
+}
+
+.has-manifesto .slash__base {
+  /* Overall strength knob: 1 = same force as the headline letters. */
+  --slash-intensity: 0.45;
+  --cursor-glitch: 0;
+  --noise-glitch: 0;
+  --glitch: calc(
+    max(var(--cursor-glitch), var(--noise-glitch)) * var(--slash-intensity)
+  );
+  --glitch-dx: 0;
+  --glitch-dy: 0;
+  --glitch-dr: 0;
+  display: block;
+  padding: 0 0.15em;
+  filter:
+    blur(calc(var(--glitch) * 0.0125em))
+    contrast(calc(1 + var(--glitch) * 1.6))
+    saturate(calc(1 + var(--glitch) * 2));
+  text-shadow:
+    calc(var(--glitch) * -0.0625em) 0 0 #00ffff,
+    calc(var(--glitch) * 0.0625em) 0 0 #ff00ff,
+    0 calc(var(--glitch) * -0.036em) 0 #ffff00,
+    0 calc(var(--glitch) * 0.036em) 0 #00ffff,
+    calc(var(--glitch) * 0.1em) calc(var(--glitch) * 0.009em) 0 #ff48b0,
+    calc(var(--glitch) * -0.1em) calc(var(--glitch) * -0.009em) 0 #00b74f,
+    calc(var(--glitch) * 0.018em) calc(var(--glitch) * 0.027em) 0 currentColor,
+    calc(var(--glitch) * -0.018em) calc(var(--glitch) * -0.027em) 0 currentColor;
+  transition:
+    filter 60ms linear,
+    text-shadow 60ms linear;
+  will-change: filter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .has-manifesto .slash__base {
+    transition: none;
+    filter: none;
+    text-shadow: none;
+  }
+}
+
 /* Ghost clips drifting between fear and utopia.
    Each image is positioned absolutely inside the venn box and rendered
    at full opacity. Motion is fully JS-driven — see the ghost physics
